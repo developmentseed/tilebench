@@ -10,6 +10,7 @@ from typing import Callable, Dict, Optional
 import pkg_resources
 import rasterio
 from loguru import logger as log
+from wurlitzer import pipes
 
 fmt = "{time} | TILEBENCH | {message}"
 log.remove()
@@ -31,26 +32,25 @@ def profile(
 
         def wrapped_f(*args, **kwargs):
             """Wrapped functions."""
-            stream = StringIO()
-            logger = logging.getLogger()
-            for handler in logger.handlers:
-                logger.removeHandler(handler)
-
+            rio_stream = StringIO()
+            logger = logging.getLogger("rasterio")
             logger.setLevel(logging.DEBUG)
-            handler = logging.StreamHandler(stream)
+            handler = logging.StreamHandler(rio_stream)
             logger.addHandler(handler)
 
             gdal_config = config or {}
-            gdal_config.update({"CPL_DEBUG": "ON"})
+            gdal_config.update({"CPL_DEBUG": "ON", "CPL_CURL_VERBOSE": "TRUE"})
 
-            with rasterio.Env(**gdal_config):
-                with Timer() as t:
-                    retval = func(*args, **kwargs)
+            with pipes() as (_, curl_stream):
+                with rasterio.Env(**gdal_config):
+                    with Timer() as t:
+                        retval = func(*args, **kwargs)
 
             logger.removeHandler(handler)
             handler.close()
 
-            lines = stream.getvalue().splitlines()
+            lines = rio_stream.getvalue().splitlines()
+            curl_lines = curl_stream.read().splitlines()
 
             # LIST
             list_requests = [line for line in lines if " VSICURL: GetFileList" in line]
@@ -58,7 +58,22 @@ def profile(
                 "count": len(list_requests),
             }
 
-            # GET
+            # HEAD
+            curl_head_requests = [
+                line for line in curl_lines if line.startswith("> HEAD")
+            ]
+            head_summary = {
+                "count": len(curl_head_requests),
+            }
+
+            # CURL GET
+            # CURL logs failed requests
+            curl_get_requests = [
+                line for line in curl_lines if line.startswith("> GET")
+            ]
+
+            # Rasterio GET
+            # Rasterio only log successfull requests
             get_requests = [line for line in lines if "VSICURL: Downloading" in line]
             get_values = [
                 map(int, get.split(" ")[4].split("-")) for get in get_requests
@@ -67,7 +82,7 @@ def profile(
             data_transfer = sum([j - i + 1 for i, j in get_values])
 
             get_summary = {
-                "count": len(get_requests),
+                "count": len(curl_get_requests),
                 "bytes": data_transfer,
                 "ranges": get_values_str,
             }
@@ -78,6 +93,7 @@ def profile(
 
             results = {
                 "LIST": list_summary,
+                "HEAD": head_summary,
                 "GET": get_summary,
                 "Timing": t.elapsed,
             }
