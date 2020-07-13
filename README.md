@@ -1,5 +1,10 @@
 # tilebench
 
+[![Packaging status](https://badge.fury.io/py/tilebench.svg)](https://badge.fury.io/py/tilebench)
+[![CircleCI](https://circleci.com/gh/developmentseed/tilebench.svg?style=svg)](https://circleci.com/gh/developmentseed/tilebench)
+[![codecov](https://codecov.io/gh/developmentseed/tilebench/branch/master/graph/badge.svg)](https://codecov.io/gh/developmentseed/tilebench)
+
+
 Get LIST/GET requests statistics withing Rasterio. 
 
 Note: This will be covered in NEXT GDAL release https://github.com/OSGeo/gdal/pull/2742
