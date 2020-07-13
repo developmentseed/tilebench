@@ -55,11 +55,19 @@ def get_overview_level(input, tile, tilesize):
 @options.file_in_arg
 @click.argument("tile", type=str)
 @click.option("--tilesize", type=int, default=256)
-def profile(input, tile, tilesize):
+@click.option(
+    "--config",
+    "config",
+    metavar="NAME=VALUE",
+    multiple=True,
+    callback=options._cb_key_val,
+    help="GDAL configuration options.",
+)
+def profile(input, tile, tilesize, config):
     """Get internal Overview level."""
     tile_z, tile_x, tile_y = list(map(int, tile.split("-")))
 
-    @profiler()
+    @profiler(config=config)
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
         COGReader.tile(src_path, x, y, z, tilesize=tilesize)
 
@@ -69,9 +77,7 @@ def profile(input, tile, tilesize):
 @cli.command()
 @options.file_in_arg
 @click.argument("zoom", type=int)
-def random(
-    input, zoom,
-):
+def random(input, zoom):
     """Get random tile."""
 
     with rasterio.open(input) as src_dst:

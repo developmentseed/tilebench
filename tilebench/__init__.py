@@ -8,10 +8,16 @@ import rasterio
 
 import click
 
-from typing import Callable
+from typing import Callable, Dict, Optional
 
 
-def profile(kernels: bool = False, stderr: bool = False):
+def profile(
+    kernels: bool = False,
+    stderr: bool = False,
+    add_to_return: bool = False,
+    quiet: bool = False,
+    config: Optional[Dict] = None,
+):
     """Profiling."""
 
     def wrapper(func: Callable):
@@ -28,15 +34,9 @@ def profile(kernels: bool = False, stderr: bool = False):
             handler = logging.StreamHandler(stream)
             logger.addHandler(handler)
 
-            config = dict(
-                CPL_DEBUG="ON",
-                VSI_CACHE="FALSE",
-                GDAL_DISABLE_READDIR_ON_OPE="EMPTY_DIR",
-                GDAL_HTTP_MERGE_CONSECUTIVE_RANGES="YES",
-                GDAL_HTTP_MULTIPLEX="YES",
-                GDAL_HTTP_MULTIRANGE="YES",
-            )
-            with rasterio.Env(**config):
+            gdal_config = config or {}
+            gdal_config.update({"CPL_DEBUG": "ON"})
+            with rasterio.Env(**gdal_config):
                 with Timer() as t:
                     retval = func(*args, **kwargs)
 
@@ -45,28 +45,51 @@ def profile(kernels: bool = False, stderr: bool = False):
 
             lines = stream.getvalue().splitlines()
 
-            get_requests = [line for line in lines if "VSICURL: Downloading " in line]
+            # LIST
+            list_requests = [line for line in lines if " VSICURL: GetFileList" in line]
+            list_summary = {
+                "count": len(list_requests),
+            }
+
+            # HEAD
+            head_requests = [line for line in lines if " VSICURL: GetFileSize" in line]
+            head_summary = {
+                "count": len(head_requests),
+            }
+
+            # GET
+            get_requests = [line for line in lines if "VSICURL: Downloading" in line]
             get_values = [
                 map(int, get.split(" ")[4].split("-")) for get in get_requests
             ]
             get_values_str = [get.split(" ")[4] for get in get_requests]
             data_transfer = sum([j - i for i, j in get_values])
 
+            get_summary = {
+                "count": len(get_requests),
+                "bytes": data_transfer,
+                "ranges": get_values_str,
+            }
+
             warp_kernel = [
                 line.split(" ")[-2:] for line in lines if "GDALWarpKernel" in line
             ]
 
             results = {
-                "GET_numbers": len(get_requests),
-                "GET_ranges": get_values_str,
-                "Bytes_transfered": data_transfer,
+                "LIST": list_summary,
+                "HEAD": head_summary,
+                "GET": get_summary,
                 "Timing": t.elapsed,
             }
 
             if kernels:
-                results["warpkernels"] = warp_kernel
+                results["WarpKernels"] = warp_kernel
 
-            click.echo(json.dumps(results), err=stderr)
+            if not quiet:
+                click.echo(json.dumps(results), err=stderr)
+
+            if add_to_return:
+                return retval, results
 
             return retval
 
