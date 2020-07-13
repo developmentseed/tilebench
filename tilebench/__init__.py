@@ -64,7 +64,7 @@ def profile(
                 map(int, get.split(" ")[4].split("-")) for get in get_requests
             ]
             get_values_str = [get.split(" ")[4] for get in get_requests]
-            data_transfer = sum([j - i for i, j in get_values])
+            data_transfer = sum([j - i + 1 for i, j in get_values])
 
             get_summary = {
                 "count": len(get_requests),

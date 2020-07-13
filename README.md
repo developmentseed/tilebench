@@ -1,6 +1,6 @@
 # tilebench
 
-Get HEAD/LIST/GET requests statistics withing Rasterio. 
+Get LIST/GET requests statistics withing Rasterio. 
 
 Note: This will be covered in NEXT GDAL release https://github.com/OSGeo/gdal/pull/2742
 
@@ -9,6 +9,18 @@ Note: This will be covered in NEXT GDAL release https://github.com/OSGeo/gdal/pu
 ```python
 from tilebench import profile
 from rio_tiler.io import cogeo as COGReader
+import rasterio 
+ 
+@profile() 
+def info(src_path: str): 
+    with rasterio.open(src_path) as src_dst: 
+        return src_dst.meta 
+ 
+ 
+meta = info("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif")
+                                  
+> 2020-07-13T15:27:22.525595-0400 | TILEBENCH | {"LIST": {"count": 0}, "GET": {"count": 1, "bytes": 16384, "ranges": ["0-16383"]}, "Timing": 0.9121768474578857}
+
 
 @profile()
 def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
@@ -21,15 +33,7 @@ data, mask = _read_tile(
     12,
 )
 
-> {
-  "LIST": {"count": 0},
-  "GET": {
-    "count": 3,
-    "bytes": 1464476,
-    "ranges": ["0-16383", "33328080-34028784", "36669144-37416533"]
-  },
-  "Timing": 2.792
-}
+> 2020-07-13T15:28:59.549799-0400 | TILEBENCH | {"LIST": {"count": 0}, "GET": {"count": 3, "bytes": 1464479, "ranges": ["0-16383", "33328080-34028784", "36669144-37416533"]}, "Timing": 2.212283134460449}
 ```
 
 ### CLI
