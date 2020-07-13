@@ -8,19 +8,21 @@ Note: This will be covered in NEXT GDAL release https://github.com/OSGeo/gdal/pu
 
 ```python
 from tilebench import profile
-from rio_tiler.io import cogeo as COGReader
 import rasterio 
  
 @profile() 
 def info(src_path: str): 
     with rasterio.open(src_path) as src_dst: 
         return src_dst.meta 
- 
- 
-meta = info("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif")
-                                  
-> 2020-07-13T15:27:22.525595-0400 | TILEBENCH | {"LIST": {"count": 0}, "GET": {"count": 1, "bytes": 16384, "ranges": ["0-16383"]}, "Timing": 0.9121768474578857}
 
+meta = info("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif")
+
+> 2020-07-13T16:59:05.685976-0400 | TILEBENCH | {"LIST": {"count": 0}, "HEAD": {"count": 1}, "GET": {"count": 1, "bytes": 16384, "ranges": ["0-16383"]}, "Timing": 0.8030309677124023}
+```
+
+```python
+from tilebench import profile
+from rio_tiler.io import cogeo as COGReader
 
 @profile()
 def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
@@ -33,7 +35,7 @@ data, mask = _read_tile(
     12,
 )
 
-> 2020-07-13T15:28:59.549799-0400 | TILEBENCH | {"LIST": {"count": 0}, "GET": {"count": 3, "bytes": 1464479, "ranges": ["0-16383", "33328080-34028784", "36669144-37416533"]}, "Timing": 2.212283134460449}
+> 2020-07-13T16:59:42.654071-0400 | TILEBENCH | {"LIST": {"count": 0}, "HEAD": {"count": 1}, "GET": {"count": 3, "bytes": 1464479, "ranges": ["0-16383", "33328080-34028784", "36669144-37416533"]}, "Timing": 3.007672071456909}
 ```
 
 ### CLI
@@ -69,16 +71,19 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
   "LIST": {
     "count": 0
   },
+  "HEAD": {
+    "count": 1
+  },
   "GET": {
     "count": 3,
-    "bytes": 1464476,
+    "bytes": 1464479,
     "ranges": [
       "0-16383",
       "33328080-34028784",
       "36669144-37416533"
     ]
   },
-  "Timing": 1.997856855392456
+  "Timing": 2.377608060836792
 }
 
 $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif 12-2314-1667 --config GDAL_DISABLE_READDIR_ON_OPEN=FALSE | jq
@@ -86,16 +91,19 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
   "LIST": {
     "count": 1
   },
+  "HEAD": {
+    "count": 8
+  },
   "GET": {
-    "count": 3,
-    "bytes": 1464476,
+    "count": 11,
+    "bytes": 1464479,
     "ranges": [
       "0-16383",
       "33328080-34028784",
       "36669144-37416533"
     ]
   },
-  "Timing": 7.073871850967407
+  "Timing": 7.09281587600708
 }
 ```
 
