@@ -1,13 +1,14 @@
 """Setup tilebench."""
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.md") as f:
     long_description = f.read()
 
-inst_reqs = ["rasterio", "rio-tiler~=2.0a11", "supermercado", "mercantile"]
+inst_reqs = ["loguru", "rasterio", "rio-tiler~=2.0a11", "supermercado", "mercantile"]
 extra_reqs = {
     "test": ["pytest", "pytest-cov"],
+    "dev": ["pytest", "pytest-cov", "pre-commit"],
 }
 
 

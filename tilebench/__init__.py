@@ -1,19 +1,25 @@
-"""cli"""
+"""tilebench"""
 
-import time
 import json
 import logging
+import sys
+import time
 from io import StringIO
-import rasterio
-
-import click
-
 from typing import Callable, Dict, Optional
+
+import pkg_resources
+import rasterio
+from loguru import logger as log
+
+fmt = "{time} | TILEBENCH | {message}"
+log.remove()
+log.add(sys.stderr, format=fmt)
+
+version = pkg_resources.get_distribution(__package__).version
 
 
 def profile(
     kernels: bool = False,
-    stderr: bool = False,
     add_to_return: bool = False,
     quiet: bool = False,
     config: Optional[Dict] = None,
@@ -36,6 +42,7 @@ def profile(
 
             gdal_config = config or {}
             gdal_config.update({"CPL_DEBUG": "ON"})
+
             with rasterio.Env(**gdal_config):
                 with Timer() as t:
                     retval = func(*args, **kwargs)
@@ -49,12 +56,6 @@ def profile(
             list_requests = [line for line in lines if " VSICURL: GetFileList" in line]
             list_summary = {
                 "count": len(list_requests),
-            }
-
-            # HEAD
-            head_requests = [line for line in lines if " VSICURL: GetFileSize" in line]
-            head_summary = {
-                "count": len(head_requests),
             }
 
             # GET
@@ -77,7 +78,6 @@ def profile(
 
             results = {
                 "LIST": list_summary,
-                "HEAD": head_summary,
                 "GET": get_summary,
                 "Timing": t.elapsed,
             }
@@ -86,7 +86,7 @@ def profile(
                 results["WarpKernels"] = warp_kernel
 
             if not quiet:
-                click.echo(json.dumps(results), err=stderr)
+                log.info(json.dumps(results))
 
             if add_to_return:
                 return retval, results

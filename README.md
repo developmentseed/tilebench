@@ -23,7 +23,6 @@ data, mask = _read_tile(
 
 > {
   "LIST": {"count": 0},
-  "HEAD": {"count": 1},
   "GET": {
     "count": 3,
     "bytes": 1464476,
@@ -66,9 +65,6 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
   "LIST": {
     "count": 0
   },
-  "HEAD": {
-    "count": 1
-  },
   "GET": {
     "count": 3,
     "bytes": 1464476,
@@ -85,9 +81,6 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
 {
   "LIST": {
     "count": 1
-  },
-  "HEAD": {
-    "count": 8
   },
   "GET": {
     "count": 3,
@@ -220,3 +213,34 @@ $ rio bounds https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-co
 ```
 
 ![](https://user-images.githubusercontent.com/10407788/84295959-4ba72a00-ab19-11ea-977f-726f37121dfb.png)
+
+## Contribution & Development
+
+Issues and pull requests are more than welcome.
+
+**dev install**
+
+```bash
+$ git clone https://github.com/developmentseed/tilebench.git
+$ cd tilebench
+$ pip install -e .[dev]
+```
+
+**Python >=3.7 only**
+
+This repo is set to use `pre-commit` to run *isort*, *flake8*, *pydocstring*, *black* ("uncompromising Python code formatter") and mypy when committing new code.
+
+```
+$ pre-commit install
+
+$ git add .
+
+$ git commit -m'my change'
+isort....................................................................Passed
+black....................................................................Passed
+Flake8...................................................................Passed
+Verifying PEP257 Compliance..............................................Passed
+mypy.....................................................................Passed
+
+$ git push origin
+```

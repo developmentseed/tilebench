@@ -1,16 +1,15 @@
 """tilebench CLI."""
 
-import click
 import json
 from random import sample
 
+import click
 import mercantile
 import rasterio
 from rasterio.rio import options
 from rasterio.warp import transform_bounds
+from rio_tiler import mercator, utils
 from rio_tiler.constants import WGS84_CRS
-from rio_tiler import utils
-from rio_tiler import mercator
 from rio_tiler.io import cogeo as COGReader
 from supermercado.burntiles import tile_extrema
 
@@ -67,11 +66,13 @@ def profile(input, tile, tilesize, config):
     """Get internal Overview level."""
     tile_z, tile_x, tile_y = list(map(int, tile.split("-")))
 
-    @profiler(config=config)
+    @profiler(quiet=True, add_to_return=True, config=config)
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-        COGReader.tile(src_path, x, y, z, tilesize=tilesize)
+        return COGReader.tile(src_path, x, y, z, tilesize=tilesize)
 
-    _read_tile(input, tile_x, tile_y, tile_z, tilesize)
+    (_, _), stats = _read_tile(input, tile_x, tile_y, tile_z, tilesize)
+
+    click.echo(json.dumps(stats))
 
 
 @cli.command()
