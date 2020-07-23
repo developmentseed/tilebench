@@ -10,6 +10,7 @@ inst_reqs = [
     "loguru",
     "rasterio",
     "rio-tiler>=2.0b1",
+    "boto3",
     "supermercado",
     "mercantile",
 ]
