@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/developmentseed/tilebench/branch/master/graph/badge.svg)](https://codecov.io/gh/developmentseed/tilebench)
 
 
-Get LIST/GET requests statistics withing Rasterio. 
+Inspect HEAD/LIST/GET requests withing Rasterio. 
 
 Note: This will be covered in NEXT GDAL release https://github.com/OSGeo/gdal/pull/2742
 
@@ -31,7 +31,8 @@ from rio_tiler.io import cogeo as COGReader
 
 @profile()
 def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-    return COGReader.tile(src_path, x, y, z, tilesize=tilesize)
+    with COGReader(src_path) as cog:
+        return cog.tile(x, y, z, tilesize=tilesize)
 
 data, mask = _read_tile(
     "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif",

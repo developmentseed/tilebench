@@ -1,12 +1,8 @@
 """Tests for tilebench."""
 
-from rio_tiler.io import cogeo as COGReader
+from rio_tiler.io import COGReader
 
 from tilebench import profile as profiler
-
-# @profile()
-# def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-#     return COGReader.tile(src_path, x, y, z, tilesize=tilesize)
 
 COG_PATH = "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif"
 
@@ -16,7 +12,8 @@ def test_simple():
 
     @profiler()
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-        return COGReader.tile(src_path, x, y, z, tilesize=tilesize)
+        with COGReader(src_path) as cog:
+            return cog.tile(x, y, z, tilesize=tilesize)
 
     data, mask = _read_tile(COG_PATH, 2314, 1667, 12,)
     assert data.shape
@@ -33,7 +30,8 @@ def test_output():
         config={"GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR"},
     )
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-        return COGReader.tile(src_path, x, y, z, tilesize=tilesize)
+        with COGReader(src_path) as cog:
+            return cog.tile(x, y, z, tilesize=tilesize)
 
     (data, mask), stats = _read_tile(COG_PATH, 2314, 1667, 12,)
     assert data.shape

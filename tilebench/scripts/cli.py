@@ -10,7 +10,7 @@ from rasterio.rio import options
 from rasterio.warp import transform_bounds
 from rio_tiler import mercator, utils
 from rio_tiler.constants import WGS84_CRS
-from rio_tiler.io import cogeo as COGReader
+from rio_tiler.io import COGReader
 from supermercado.burntiles import tile_extrema
 
 from tilebench import profile as profiler
@@ -68,7 +68,8 @@ def profile(input, tile, tilesize, config):
 
     @profiler(quiet=True, add_to_return=True, config=config)
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-        return COGReader.tile(src_path, x, y, z, tilesize=tilesize)
+        with COGReader(src_path) as cog:
+            return cog.tile(x, y, z, tilesize=tilesize)
 
     (_, _), stats = _read_tile(input, tile_x, tile_y, tile_z, tilesize)
 

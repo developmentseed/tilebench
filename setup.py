@@ -9,7 +9,7 @@ inst_reqs = [
     "wurlitzer",
     "loguru",
     "rasterio",
-    "rio-tiler~=2.0a11",
+    "rio-tiler>=2.0b1",
     "supermercado",
     "mercantile",
 ]
