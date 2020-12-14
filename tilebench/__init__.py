@@ -7,16 +7,15 @@ import time
 from io import StringIO
 from typing import Callable, Dict, Optional
 
-import pkg_resources
 import rasterio
 from loguru import logger as log
 from wurlitzer import pipes
 
+__version__ = "0.0.1"
+
 fmt = "{time} | TILEBENCH | {message}"
 log.remove()
 log.add(sys.stderr, format=fmt)
-
-version = pkg_resources.get_distribution(__package__).version
 
 
 def profile(

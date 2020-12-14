@@ -1,11 +1,10 @@
 # tilebench
 
-[![Packaging status](https://badge.fury.io/py/tilebench.svg)](https://badge.fury.io/py/tilebench)
-[![CircleCI](https://circleci.com/gh/developmentseed/tilebench.svg?style=svg)](https://circleci.com/gh/developmentseed/tilebench)
+[![CI](https://github.com/developmentseed/tilebench/workflows/CI/badge.svg)](https://github.com/developmentseed/tilebench/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/developmentseed/tilebench/branch/master/graph/badge.svg)](https://codecov.io/gh/developmentseed/tilebench)
+[![Packaging status](https://badge.fury.io/py/tilebench.svg)](https://badge.fury.io/py/tilebench)
 
-
-Inspect HEAD/LIST/GET requests withing Rasterio. 
+Inspect HEAD/LIST/GET requests withing Rasterio.
 
 Note: This will be covered in NEXT GDAL release https://github.com/OSGeo/gdal/pull/2742
 
@@ -13,12 +12,12 @@ Note: This will be covered in NEXT GDAL release https://github.com/OSGeo/gdal/pu
 
 ```python
 from tilebench import profile
-import rasterio 
- 
-@profile() 
-def info(src_path: str): 
-    with rasterio.open(src_path) as src_dst: 
-        return src_dst.meta 
+import rasterio
+
+@profile()
+def info(src_path: str):
+    with rasterio.open(src_path) as src_dst:
+        return src_dst.meta
 
 meta = info("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif")
 
@@ -56,21 +55,20 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  get-overview-level  Get internal Overview level.
-  get-zooms           Get Mercator Zoom levels.
-  profile             Get internal Overview level.
-  random              Get random tile.
+  get-zooms  Get Mercator Zoom levels.
+  profile    Profile COGReader Mercator Tile read.
+  random     Get random tile.
 ```
 
 ```
 $ tilebench get-zooms https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif | jq
 {
-  "minzoom": 8,
+  "minzoom": 7,
   "maxzoom": 12
 }
 
-$ tilebench random https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif 12                
-[2314, 1667, 12]
+$ tilebench random https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif --zoom 12
+12-2314-1667
 
 $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif 12-2314-1667 --config GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR | jq
 {
@@ -113,7 +111,7 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
 }
 ```
 
-## More
+## Visulizing Internal tiles Vs Mercator grid
 
 #### aiocogeo
 Using the great [aiocogeo](https://github.com/geospatial-jeff/aiocogeo) we can get more info about the COG internal structure.
@@ -134,14 +132,14 @@ $ aiocogeo info https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a
             BoundingBox:      (699960.0, 3490200.0, 809760.0, 3600000.0)
             Compression:      deflate
             Internal mask:    False
-        
+
           IFD
-                Id      Size           BlockSize     MinTileSize (KB)     MaxTileSize (KB)     MeanTileSize (KB)    
-                0       5490x5490      512x512       0.531                414.187              261.824                       
-                1       2745x2745      256x256       0.149                105.182              67.362                        
-                2       1373x1373      256x256       0.149                105.244              58.2                          
-                3       687x687        256x256       15.938               106.996              60.686                        
-                4       344x344        256x256       13.559               66.76                36.114  
+                Id      Size           BlockSize     MinTileSize (KB)     MaxTileSize (KB)     MeanTileSize (KB)
+                0       5490x5490      512x512       0.531                414.187              261.824
+                1       2745x2745      256x256       0.149                105.182              67.362
+                2       1373x1373      256x256       0.149                105.244              58.2
+                3       687x687        256x256       15.938               106.996              60.686
+                4       344x344        256x256       13.559               66.76                36.114
 ```
 
 #### morecantile

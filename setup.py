@@ -9,10 +9,9 @@ inst_reqs = [
     "wurlitzer",
     "loguru",
     "rasterio",
-    "rio-tiler>=2.0b1",
+    "rio-tiler>=2.0.0rc3",
     "boto3",
     "supermercado",
-    "mercantile",
 ]
 extra_reqs = {
     "test": ["pytest", "pytest-cov"],
@@ -32,7 +31,7 @@ setup(
     author_email="vincent@developmentseed.org",
     url="https://github.com/developmentseed/tilebench",
     license="MIT",
-    packages=find_packages(exclude=["ez_setup", "examples", "tests"]),
+    packages=find_packages(exclude=["tests*"]),
     include_package_data=True,
     zip_safe=False,
     install_requires=inst_reqs,
