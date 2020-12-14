@@ -13,6 +13,8 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
+    env:
+      CURL_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
 
     steps:
       - uses: actions/checkout@v2
