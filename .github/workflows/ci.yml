@@ -5,10 +5,8 @@ on:
   push:
     branches:
     - master
-  release:
-    types:
-      - created
-      - edited
+    tags:
+    - '*'
   pull_request:
 
 jobs:
