@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset='utf-8' />
+        <title>Rio Viz</title>
+        <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+        <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.6.1/mapbox-gl.js'></script>
+        <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.6.1/mapbox-gl.css' rel='stylesheet' />
+
+        <link href='https://api.mapbox.com/mapbox-assembly/v0.23.2/assembly.min.css' rel='stylesheet'>
+        <script src='https://api.mapbox.com/mapbox-assembly/v0.23.2/assembly.js'></script>
+
+        <script src="{{ url_for('static', path='/spherical-mercator.js') }}"></script>
+        <!-- <script src='https://npmcdn.com/@turf/turf@3.5.1/turf.min.js'></script> -->
+
+        <style>
+            body { margin:0; padding:0; width:100%; height:100%;}
+            #map { position:absolute; top:0; bottom:0; width:100%; }
+            .loading-map {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                color: #FFF;
+                background-color: #000;
+                text-align: center;
+                opacity: 0.5;
+                font-size: 45px;
+            }
+            .loading-map.off{
+                opacity: 0;
+                -o-transition: all .5s ease;
+                -webkit-transition: all .5s ease;
+                -moz-transition: all .5s ease;
+                -ms-transition: all .5s ease;
+                transition: all ease .5s;
+                visibility:hidden;
+            }
+            .middle-center {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+            .middle-center * {
+                display: block;
+                padding: 5px;
+            }
+
+            #menu {
+              left: 0;
+              top: 0;
+              -o-transition: all .5s ease;
+              -webkit-transition: all .5s ease;
+              -moz-transition: all .5s ease;
+              -ms-transition: all .5s ease;
+              transition: all ease .5s;
+            }
+
+            @media(max-width: 767px) {
+              .mapboxgl-ctrl-attrib {
+                  font-size: 10px;
+              }
+            }
+
+        </style>
+    </head>
+
+    <body>
+
+    <div id='menu' class='px12 pt12 absolute z2'>
+        <div class='txt-h5 mt6 mb6 color-black'>
+            Overview Level
+        </div>
+
+        <div class='select-container '>
+            <select id='ovr-selector' class='select select--s select--stroke wmax-full color-black bg-white'>
+            </select>
+            <div class='select-arrow color-black'></div>
+        </div>
+    </div>
+
+    <div id='map'>
+      <div id='loader' class="loading-map z3">
+        <div class="middle-center">
+          <div class="round animation-spin animation--infinite animation--speed-1">
+            <svg class='icon icon--l inline-block'><use xlink:href='#icon-satellite'/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="zoom-info"><span id="zoom"></span></div>
+    </div>
+
+    <script>
+    mapboxgl.accessToken = '{{ mapbox_access_token  }}'
+
+    const scope = {data: undefined}
+    const merc = new SphericalMercator({ size: 256 });
+
+    const info_endpoint = '{{ geojson_endpoint }}'
+    const grid_endpoint = '{{ grid_endpoint }}'
+
+    let style
+    if (mapboxgl.accessToken !== '') {
+      style = 'mapbox://styles/mapbox/{{ mapbox_style }}-v9'
+    } else {
+      style = { version: 8, sources: {}, layers: [] }
+    }
+
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: style,
+        center: [0, 0],
+        zoom: 1
+    })
+
+    /**
+     * from https://github.com/mapbox/tilebelt/blob/master/index.js#L175-L195
+     * Get the quadkey for a tile
+     *
+     * @name tileToQuadkey
+     * @param {Array<number>} tile
+     * @returns {string} quadkey
+     * @example
+     * var quadkey = tileToQuadkey([0, 1, 5])
+     * //=quadkey
+     */
+    function tileToQuadkey(tile) {
+        var index = '';
+        for (var z = tile[2]; z > 0; z--) {
+            var b = 0;
+            var mask = 1 << (z - 1);
+            if ((tile[0] & mask) !== 0) b++;
+            if ((tile[1] & mask) !== 0) b += 2;
+            index += b.toString();
+        }
+        return index;
+    }
+
+    // return a geojson of Mercator Tiles for a bbox and zoom
+    var mercator_grid = (zoom) => {
+        const extrema = merc.xyz(scope.data.properties.bounds, zoom);
+
+        const featCollection = {
+            'type': 'FeatureCollection',
+            'features': [],
+        }
+
+        for (var x = extrema.minX, maxX = extrema.maxX + 1; x < maxX; x++) {
+            for (var y = extrema.minY, maxY = extrema.maxY + 1; y < maxY; y++) {
+                let extent = merc.bbox(x, y, zoom)
+                let w = extent[0]
+                let s = extent[1]
+                let e = extent[2]
+                let n = extent[3]
+
+                let qk = tileToQuadkey([x, y, zoom])
+                let feat = {
+                    'type': 'Feature',
+                    'id': qk,
+                    'geometry': {
+                        'type': 'Polygon',
+                        'coordinates': [
+                            [
+
+                                [w, n],
+                                [e, n],
+                                [e, s],
+                                [w, s],
+                                [w, n]
+                            ]
+                        ]
+                    },
+                    'properties': {
+                        'x': x,
+                        'y': y,
+                        'z': zoom,
+                        'quadkey': qk,
+                        'tile': `${zoom}-${x}-${y}`
+                    }
+                }
+                featCollection.features.push(feat);
+            }
+        }
+        return featCollection
+    }
+
+    const truncate_lnglat = (lng, lat) => {
+        if (lng > 180.0) {
+            lng = 180.0
+        } else if (lng < -180.0) {
+            lng = -180.0
+        }
+        if (lat > 90.0) {
+            lat = 90.0
+        } else if (lat < -90.0) {
+            lat = -90.0
+        }
+        return [lng, lat]
+    }
+
+    map.on('load', () => {
+
+        fetch(info_endpoint)
+            .then(res => {
+                if (res.ok) return res.json()
+                throw new Error('Network response was not ok.');
+            })
+            .then(data => {
+                scope.data = data
+
+                map.addSource('aoi', {
+                    'type': 'geojson',
+                    'data': data
+                })
+                map.addLayer({
+                    id: 'aoi-polygon',
+                    type: 'line',
+                    source: 'aoi',
+                    layout: {
+                        'line-cap': 'round',
+                        'line-join': 'round'
+                    },
+                    paint: {
+                        'line-color': '#000000',
+                        'line-dasharray': [3, 3],
+                        'line-width': 0.1
+                    }
+                })
+
+                const bounds = data.properties.bounds
+                const ll = truncate_lnglat(bounds[0], bounds[1])
+                const ur = truncate_lnglat(bounds[2], bounds[3])
+                map.fitBounds([ll, ur])
+
+                const sel = document.getElementById('ovr-selector')
+                const novr = data.properties.ifd.length
+
+                for (var i = 0; i < novr; i++) {
+                    let l = document.createElement('option')
+                    ifd = data.properties.ifd[i]
+                    l.setAttribute('level', ifd.Level)
+                    l.setAttribute('zoom', ifd.MercatorZoom)
+                    l.text = `Level: ${ifd.Level} - Zoom ${ifd.MercatorZoom}`
+                    sel.appendChild(l)
+                    if (i === novr - 1) l.selected = "selected"
+                }
+
+                return update_viz()
+            })
+            .catch(err => {
+                console.warn(err)
+            })
+            .then(() => {
+                document.getElementById('loader').classList.toggle('off')
+            })
+
+        const add_mercator_grid = (ifd) => {
+            if (map.getLayer('mercator-grid')) map.removeLayer('mercator-grid')
+            if (map.getLayer('mercator-grid-h')) map.removeLayer('mercator-grid-h')
+            if (map.getSource('mercator-grid')) map.removeSource('mercator-grid')
+
+            const grid = mercator_grid(ifd.MercatorZoom)
+            map.addSource('mercator-grid', {
+              'type': 'geojson',
+              'data': grid
+            })
+
+            map.addLayer({
+              id: 'mercator-grid',
+              type: 'fill',
+              source: 'mercator-grid',
+              paint: {
+                'fill-color': 'hsla(0, 0%, 0%, 0)',
+                'fill-outline-color': 'hsl(207, 84%, 57%)',
+              }
+            })
+
+            map.addLayer({
+                id: 'mercator-grid-h',
+                type: 'fill',
+                source: 'mercator-grid',
+                paint: {
+                    'fill-outline-color': '#1386af',
+                    'fill-color': '#0f6d8e',
+                    'fill-opacity': 0.3
+                },
+                filter: ['==', 'quadkey', '']
+            })
+        }
+
+        const add_tile_grid = (ifd) => {
+            if (map.getLayer('tile-grid')) map.removeLayer('tile-grid')
+            if (map.getSource('tile-grid')) map.removeSource('tile-grid')
+
+            return fetch(`${grid_endpoint}?ovr_level=${ifd.Level}`)
+                .then(res => {
+                    if (res.ok) return res.json()
+                    throw new Error('Network response was not ok.');
+                })
+                .then(data => {
+
+                    map.addSource('tile-grid', {
+                        'type': 'geojson',
+                        'data': data
+                    })
+
+                    map.addLayer({
+                        id: 'tile-grid',
+                        type: 'line',
+                        source: 'tile-grid',
+                        layout: {
+                            'line-cap': 'round',
+                            'line-join': 'round'
+                        },
+                        paint: {
+                            'line-color': '#e40b34',
+                            'line-width': 0.5
+                        }
+                    })
+                })
+                .catch(err => {
+                    console.warn(err)
+                })
+        }
+
+        const update_viz = () => {
+            level = parseInt(document.getElementById('ovr-selector').selectedOptions[0].getAttribute("level"))
+            add_mercator_grid(scope.data.properties.ifd[level])
+            add_tile_grid(scope.data.properties.ifd[level])
+        }
+
+        document.getElementById('ovr-selector').addEventListener('change', (e) => {
+            update_viz()
+        })
+
+        map.on('mousemove', (e) => {
+            const mouseRadius = 1
+            const features = map.queryRenderedFeatures(e.point, {layers: ['mercator-grid']})
+
+            //console.log(features)
+            if (features.length > 0) {
+                map.getCanvas().style.cursor = 'pointer'
+                let filter = features.map(e => {return e.properties.quadkey})
+                map.setFilter('mercator-grid-h', ['in', 'quadkey', filter[0]]);
+
+            } else {
+                map.getCanvas().style.cursor = 'inherit'
+                map.setFilter('mercator-grid-h', ['in', 'quadkey', ''])
+            }
+        })
+        map.on('click', 'mercator-grid', (e) => {
+
+            let html = `<div>tile ${e.features[0].properties.tile}</div>`
+
+            let props = e.features[0].properties
+            document.getElementById('loader').classList.toggle('off')
+
+            x = props.x
+            y = props.y
+            z = props.z
+            fetch(`{{ tile_endpoint }}`)
+                .then(res => {
+                    if (res.ok) return res.json()
+                    throw new Error('Network response was not ok.');
+                })
+                .then(data => {
+                    console.log(data)
+                    html += '<table><tr><th class="align-l">Info</th><th class="px3 align-r">value</th></tr>'
+                    html += `<tr><td class="align-l">HEAD</td><td class="px3 align-r">${data.HEAD.count}</td></tr>`
+                    html += `<tr><td class="align-l">GET</td><td class="px3 align-r">${data.GET.count}</td></tr>`
+                    html += '</table>'
+                    new mapboxgl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML(html)
+                        .addTo(map)
+                })
+                .catch (err => {
+                    console.warn(err)
+                })
+                .then(() => {
+                    document.getElementById('loader').classList.toggle('off')
+                })
+
+        })
+
+    })
+
+    </script>
+
+    </body>
+    </html>
