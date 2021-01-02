@@ -19,7 +19,7 @@ class VSIStatsMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp, config: Optional[Dict] = None) -> None:
         """Init Middleware."""
         super().__init__(app)
-        self.config: Dict = {} or config
+        self.config: Dict = config or {}
 
     async def dispatch(self, request: Request, call_next):
         """Add VSI stats in headers."""
