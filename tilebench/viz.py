@@ -18,7 +18,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
-from tilebench import profile as profiler
+from tilebench.middleware import NoCacheMiddleware, VSIStatsMiddleware
 from tilebench.ressources.responses import GeoJSONResponse
 
 template_dir = str(pathlib.Path(__file__).parent.joinpath("templates"))
@@ -80,6 +80,8 @@ class TileDebug:
         self.register_routes()
         self.app.include_router(self.router)
         self.app.mount("/static", StaticFiles(directory=static_dir), name="static")
+        self.app.add_middleware(VSIStatsMiddleware, config=self.config)
+        self.app.add_middleware(NoCacheMiddleware)
 
     def register_routes(self):
         """Register routes to the FastAPI app."""
@@ -87,14 +89,9 @@ class TileDebug:
         @self.router.get(r"/tiles/{z}/{x}/{y}")
         def tile(z: int, x: int, y: int):
             """Handle /tiles requests."""
-
-            @profiler(quiet=True, add_to_return=True, config=self.config)
-            def _read_tile(x: int, y: int, z: int):
-                with COGReader(self.src_path) as src_dst:
-                    return src_dst.tile(x, y, z)
-
-            (_, _), stats = _read_tile(x, y, z)
-            return stats
+            with COGReader(self.src_path) as src_dst:
+                _ = src_dst.tile(x, y, z)
+            return "OK"
 
         @self.router.get(
             r"/info.geojson",
@@ -104,56 +101,55 @@ class TileDebug:
         )
         def info():
             """return geojson."""
-            with rasterio.Env(**self.config):
-                with COGReader(self.src_path) as src_dst:
-                    info = src_dst.info().dict(exclude_none=True)
-                    ovr = src_dst.dataset.overviews(1)
-                    info["overviews"] = len(ovr)
+            with COGReader(self.src_path) as src_dst:
+                info = src_dst.info().dict(exclude_none=True)
+                ovr = src_dst.dataset.overviews(1)
+                info["overviews"] = len(ovr)
+                dst_affine, _, _ = calculate_default_transform(
+                    src_dst.dataset.crs,
+                    tms.crs,
+                    src_dst.dataset.width,
+                    src_dst.dataset.height,
+                    *src_dst.dataset.bounds,
+                )
+                resolution = max(abs(dst_affine[0]), abs(dst_affine[4]))
+                zoom = tms.zoom_for_res(resolution)
+                ifd = [
+                    {
+                        "Level": 0,
+                        "Width": src_dst.dataset.width,
+                        "Height": src_dst.dataset.height,
+                        "Blocksize": src_dst.dataset.block_shapes[0],
+                        "Decimation": 0,
+                        "MercatorZoom": zoom,
+                        "MercatorResolution": resolution,
+                    }
+                ]
+
+            for ix, decim in enumerate(ovr):
+                with rasterio.open(self.src_path, OVERVIEW_LEVEL=ix) as ovr_dst:
                     dst_affine, _, _ = calculate_default_transform(
-                        src_dst.dataset.crs,
+                        ovr_dst.crs,
                         tms.crs,
-                        src_dst.dataset.width,
-                        src_dst.dataset.height,
-                        *src_dst.dataset.bounds,
+                        ovr_dst.width,
+                        ovr_dst.height,
+                        *ovr_dst.bounds,
                     )
                     resolution = max(abs(dst_affine[0]), abs(dst_affine[4]))
                     zoom = tms.zoom_for_res(resolution)
-                    ifd = [
+
+                    ifd.append(
                         {
-                            "Level": 0,
-                            "Width": src_dst.dataset.width,
-                            "Height": src_dst.dataset.height,
-                            "Blocksize": src_dst.dataset.block_shapes[0],
-                            "Decimation": 0,
+                            "Level": ix + 1,
+                            "Width": ovr_dst.width,
+                            "Height": ovr_dst.height,
+                            "Blocksize": ovr_dst.block_shapes[0],
+                            "Decimation": decim,
                             "MercatorZoom": zoom,
                             "MercatorResolution": resolution,
                         }
-                    ]
-
-                for ix, decim in enumerate(ovr):
-                    with rasterio.open(self.src_path, OVERVIEW_LEVEL=ix) as ovr_dst:
-                        dst_affine, _, _ = calculate_default_transform(
-                            ovr_dst.crs,
-                            tms.crs,
-                            ovr_dst.width,
-                            ovr_dst.height,
-                            *ovr_dst.bounds,
-                        )
-                        resolution = max(abs(dst_affine[0]), abs(dst_affine[4]))
-                        zoom = tms.zoom_for_res(resolution)
-
-                        ifd.append(
-                            {
-                                "Level": ix + 1,
-                                "Width": ovr_dst.width,
-                                "Height": ovr_dst.height,
-                                "Blocksize": ovr_dst.block_shapes[0],
-                                "Decimation": decim,
-                                "MercatorZoom": zoom,
-                                "MercatorResolution": resolution,
-                            }
-                        )
-                    info["ifd"] = ifd
+                    )
+                info["ifd"] = ifd
 
             return bbox_to_feature(info["bounds"], properties=info)
 
@@ -165,21 +161,18 @@ class TileDebug:
         )
         def grid(ovr_level: int = Query(...)):
             """return geojson."""
-            with rasterio.Env(**self.config):
-                options = {"OVERVIEW_LEVEL": ovr_level - 1} if ovr_level else {}
-                with rasterio.open(self.src_path, **options) as src_dst:
+            options = {"OVERVIEW_LEVEL": ovr_level - 1} if ovr_level else {}
+            with rasterio.open(self.src_path, **options) as src_dst:
 
-                    feats = []
-                    for _, window in list(src_dst.block_windows(1)):
-                        geom = bbox_to_feature(src_dst.window_bounds(window))
-                        geom = transform_geom(
-                            src_dst.crs, WGS84_CRS, geom.geometry.dict(),
-                        )
-                        feats.append(
-                            {"type": "Feature", "geometry": geom, "properties": {}}
-                        )
-                grids = {"type": "FeatureCollection", "features": feats}
-                return grids
+                feats = []
+                for _, window in list(src_dst.block_windows(1)):
+                    geom = bbox_to_feature(src_dst.window_bounds(window))
+                    geom = transform_geom(src_dst.crs, WGS84_CRS, geom.geometry.dict(),)
+                    feats.append(
+                        {"type": "Feature", "geometry": geom, "properties": {}}
+                    )
+            grids = {"type": "FeatureCollection", "features": feats}
+            return grids
 
         @self.router.get(
             "/",
