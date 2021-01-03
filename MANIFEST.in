@@ -1,0 +1,2 @@
+include tilebench/templates/*
+include tilebench/static/*

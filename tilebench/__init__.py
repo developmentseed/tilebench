@@ -5,7 +5,7 @@ import logging
 import sys
 import time
 from io import StringIO
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 import rasterio
 from loguru import logger as log
@@ -16,6 +16,50 @@ __version__ = "0.0.2"
 fmt = "{time} | TILEBENCH | {message}"
 log.remove()
 log.add(sys.stderr, format=fmt)
+
+
+def analyse_logs(rio_stream: StringIO, curl_stream: StringIO) -> Dict[str, Any]:
+    """Analyse Rasterio and CURL logs."""
+    lines = rio_stream.getvalue().splitlines()
+    curl_lines = curl_stream.read().splitlines()
+
+    # LIST
+    list_requests = [line for line in lines if " VSICURL: GetFileList" in line]
+    list_summary = {
+        "count": len(list_requests),
+    }
+
+    # HEAD
+    curl_head_requests = [line for line in curl_lines if line.startswith("> HEAD")]
+    head_summary = {
+        "count": len(curl_head_requests),
+    }
+
+    # CURL GET
+    # CURL logs failed requests
+    curl_get_requests = [line for line in curl_lines if line.startswith("> GET")]
+
+    # Rasterio GET
+    # Rasterio only log successfull requests
+    get_requests = [line for line in lines if "VSICURL: Downloading" in line]
+    get_values = [map(int, get.split(" ")[4].split("-")) for get in get_requests]
+    get_values_str = [get.split(" ")[4] for get in get_requests]
+    data_transfer = sum([j - i + 1 for i, j in get_values])
+
+    get_summary = {
+        "count": len(curl_get_requests),
+        "bytes": data_transfer,
+        "ranges": get_values_str,
+    }
+
+    warp_kernel = [line.split(" ")[-2:] for line in lines if "GDALWarpKernel" in line]
+
+    return {
+        "LIST": list_summary,
+        "HEAD": head_summary,
+        "GET": get_summary,
+        "WarpKernels": warp_kernel,
+    }
 
 
 def profile(
@@ -48,57 +92,11 @@ def profile(
             logger.removeHandler(handler)
             handler.close()
 
-            lines = rio_stream.getvalue().splitlines()
-            curl_lines = curl_stream.read().splitlines()
+            results = analyse_logs(rio_stream, curl_stream)
+            results["Timing"] = t.elapsed
 
-            # LIST
-            list_requests = [line for line in lines if " VSICURL: GetFileList" in line]
-            list_summary = {
-                "count": len(list_requests),
-            }
-
-            # HEAD
-            curl_head_requests = [
-                line for line in curl_lines if line.startswith("> HEAD")
-            ]
-            head_summary = {
-                "count": len(curl_head_requests),
-            }
-
-            # CURL GET
-            # CURL logs failed requests
-            curl_get_requests = [
-                line for line in curl_lines if line.startswith("> GET")
-            ]
-
-            # Rasterio GET
-            # Rasterio only log successfull requests
-            get_requests = [line for line in lines if "VSICURL: Downloading" in line]
-            get_values = [
-                map(int, get.split(" ")[4].split("-")) for get in get_requests
-            ]
-            get_values_str = [get.split(" ")[4] for get in get_requests]
-            data_transfer = sum([j - i + 1 for i, j in get_values])
-
-            get_summary = {
-                "count": len(curl_get_requests),
-                "bytes": data_transfer,
-                "ranges": get_values_str,
-            }
-
-            warp_kernel = [
-                line.split(" ")[-2:] for line in lines if "GDALWarpKernel" in line
-            ]
-
-            results = {
-                "LIST": list_summary,
-                "HEAD": head_summary,
-                "GET": get_summary,
-                "Timing": t.elapsed,
-            }
-
-            if kernels:
-                results["WarpKernels"] = warp_kernel
+            if not kernels:
+                results.pop("WarpKernels")
 
             if not quiet:
                 log.info(json.dumps(results))
