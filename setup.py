@@ -24,7 +24,7 @@ extra_reqs = {
 
 setup(
     name="tilebench",
-    version="0.1.0",
+    version="0.0.2",
     description=u"",
     long_description=long_description,
     long_description_content_type="text/markdown",
