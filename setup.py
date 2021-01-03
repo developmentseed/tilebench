@@ -17,8 +17,8 @@ inst_reqs = [
     "geojson_pydantic",
 ]
 extra_reqs = {
-    "test": ["pytest", "pytest-cov"],
-    "dev": ["pytest", "pytest-cov", "pre-commit"],
+    "test": ["pytest", "pytest-cov", "pytest-asyncio"],
+    "dev": ["pytest", "pytest-cov", "pytest-asyncio", "pre-commit"],
 }
 
 
