@@ -15,6 +15,7 @@ inst_reqs = [
     "fastapi",
     "uvicorn",
     "geojson_pydantic",
+    "aiofiles",
 ]
 extra_reqs = {
     "test": ["pytest", "pytest-cov", "pytest-asyncio"],
