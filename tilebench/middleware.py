@@ -38,11 +38,12 @@ class VSIStatsMiddleware(BaseHTTPMiddleware):
         logger.removeHandler(handler)
         handler.close()
 
-        results = analyse_logs(rio_stream, curl_stream,)
-        if results["GET"]["count"] or results["HEAD"]["count"]:
+        if rio_stream or curl_stream:
+            results = analyse_logs(rio_stream, curl_stream,)
             get = "get;count={count};size={bytes}".format(**results["GET"])
+            ranges = "ranges; values={}".format("|".join(results["GET"]["ranges"]))
             head = "head;count={count}".format(**results["HEAD"])
-            response.headers["VSI-Stats"] = f"{head}, {get}"
+            response.headers["VSI-Stats"] = f"{head}, {get}, {ranges}"
 
         return response
 

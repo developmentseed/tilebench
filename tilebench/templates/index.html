@@ -225,7 +225,7 @@
                     paint: {
                         'line-color': '#000000',
                         'line-dasharray': [3, 3],
-                        'line-width': 0.1
+                        'line-width': 1
                     }
                 })
 
@@ -368,23 +368,23 @@
                 .then(data => {
                     // Display the key/value pairs
                     const stats = data.get("vsi-stats")
-                    console.log(stats)
-                    const head = stats.split(',')[0]
-                    const headCount = head.split(';')[1].split('=')[1]
-                    const get = stats.split(',')[1]
-                    const getCount = get.split(';')[1].split('=')[1]
-                    const getSize = get.split(';')[2].split('=')[1]
+                    if (stats) {
+                        const head = stats.split(',')[0]
+                        const headCount = head.split(';')[1].split('=')[1]
+                        const get = stats.split(',')[1]
+                        const getCount = get.split(';')[1].split('=')[1]
+                        const getSize = get.split(';')[2].split('=')[1]
 
-                    html += '<table><tr><th class="align-l">Info</th><th class="px3 align-r">value</th></tr>'
-                    html += `<tr><td class="align-l">HEAD</td><td class="px3 align-r">${headCount}</td></tr>`
-                    html += `<tr><td class="align-l">GET</td><td class="px3 align-r">${getCount}</td></tr>`
-                    html += `<tr><td class="align-l">GET (size)</td><td class="px3 align-r">${getSize}</td></tr>`
-                    html += '</table>'
-                    new mapboxgl.Popup()
-                        .setLngLat(e.lngLat)
-                        .setHTML(html)
-                        .addTo(map)
-
+                        html += '<table><tr><th class="align-l">Info</th><th class="px3 align-r">value</th></tr>'
+                        html += `<tr><td class="align-l">HEAD</td><td class="px3 align-r">${headCount}</td></tr>`
+                        html += `<tr><td class="align-l">GET</td><td class="px3 align-r">${getCount}</td></tr>`
+                        html += `<tr><td class="align-l">GET (size)</td><td class="px3 align-r">${getSize}</td></tr>`
+                        html += '</table>'
+                        new mapboxgl.Popup()
+                            .setLngLat(e.lngLat)
+                            .setHTML(html)
+                            .addTo(map)
+                    }
                     return
                 })
                 .catch (err => {

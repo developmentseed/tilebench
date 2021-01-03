@@ -144,7 +144,7 @@ class MbxTokenType(click.ParamType):
 def viz(
     src_path, style, port, host, mapbox_token, server_only, config,
 ):
-    """Viz cli."""
+    """WEB UI to visualize VSI statistics for a web mercator tile requests."""
     config = config or {}
 
     application = TileDebug(
