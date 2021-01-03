@@ -16,6 +16,7 @@ inst_reqs = [
     "uvicorn",
     "geojson_pydantic",
     "aiofiles",
+    "jinja2",
 ]
 extra_reqs = {
     "test": ["pytest", "pytest-cov", "pytest-asyncio"],
