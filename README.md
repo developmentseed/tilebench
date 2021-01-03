@@ -8,7 +8,7 @@ Inspect HEAD/LIST/GET requests withing Rasterio.
 
 Note: This will be covered in NEXT GDAL release https://github.com/OSGeo/gdal/pull/2742
 
-### API
+## API
 
 ```python
 from tilebench import profile
@@ -43,7 +43,27 @@ data, mask = _read_tile(
 > 2020-07-13T16:59:42.654071-0400 | TILEBENCH | {"LIST": {"count": 0}, "HEAD": {"count": 1}, "GET": {"count": 3, "bytes": 1464479, "ranges": ["0-16383", "33328080-34028784", "36669144-37416533"]}, "Timing": 3.007672071456909}
 ```
 
-### CLI
+### Starlette Middleware
+
+In addition of the `viz` CLI we added a starlette middleware to easily integrate VSI statistics in your web services.
+
+```python
+
+from fastapi import FastAPI
+
+from tilebench.middleware import VSIStatsMiddleware
+
+app = FastAPI()
+app.add_middleware(VSIStatsMiddleware)
+```
+
+The middleware will add a `vsi-stats` entrie in the response headers in form of:
+
+```
+vsi-stats: head;count=1, get;count=2;size=196608, ranges; values=0-65535|65536-196607
+```
+
+## Command Line Interface (CLI)
 
 ```
 $ tilebench --help
@@ -58,8 +78,10 @@ Commands:
   get-zooms  Get Mercator Zoom levels.
   profile    Profile COGReader Mercator Tile read.
   random     Get random tile.
+  viz        WEB UI to visualize VSI statistics for a web mercator tile request
 ```
 
+#### Examples
 ```
 $ tilebench get-zooms https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif | jq
 {
@@ -110,6 +132,19 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
   "Timing": 7.09281587600708
 }
 ```
+
+## GDAL config options
+
+- **GDAL_DISABLE_READDIR_ON_OPEN**
+- **GDAL_INGESTED_BYTES_AT_OPEN**
+- **CPL_VSIL_CURL_ALLOWED_EXTENSIONS**
+- **GDAL_CACHEMAX**,
+- **GDAL_HTTP_MERGE_CONSECUTIVE_RANGES**
+- **VSI_CACHE**
+- **VSI_CACHE_SIZE**
+...
+
+See the full list at https://gdal.org/user/configoptions.html
 
 ## Visulizing Internal tiles Vs Mercator grid
 
