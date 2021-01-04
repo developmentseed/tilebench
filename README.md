@@ -148,122 +148,17 @@ See the full list at https://gdal.org/user/configoptions.html
 
 ## Visulizing Internal tiles Vs Mercator grid
 
-#### aiocogeo
-Using the great [aiocogeo](https://github.com/geospatial-jeff/aiocogeo) we can get more info about the COG internal structure.
-
 ```
-$ aiocogeo info https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif
-
-        FILE INFO: https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif
-
-          PROFILE
-            Width:            5490
-            Height:           5490
-            Bands:            1
-            Dtype:            uint16
-            Crs:              EPSG:32634
-            Origin:           (699960.0, 3600000.0)
-            Resolution:       (20.0, -20.0)
-            BoundingBox:      (699960.0, 3490200.0, 809760.0, 3600000.0)
-            Compression:      deflate
-            Internal mask:    False
-
-          IFD
-                Id      Size           BlockSize     MinTileSize (KB)     MaxTileSize (KB)     MeanTileSize (KB)
-                0       5490x5490      512x512       0.531                414.187              261.824
-                1       2745x2745      256x256       0.149                105.182              67.362
-                2       1373x1373      256x256       0.149                105.244              58.2
-                3       687x687        256x256       15.938               106.996              60.686
-                4       344x344        256x256       13.559               66.76                36.114
+$ tilebench viz https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif --config GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR
 ```
 
-#### morecantile
+![](https://user-images.githubusercontent.com/10407788/103528918-17180880-4e85-11eb-91b3-d60659b15e80.png)
 
-Combining aiocogeo + [morecantile](https://github.com/developmentseed/morecantile) we can create a geojson of the internal tiles and compare with the mercator grid.
+Blue lines represent the mercator grid for a specific zoom level and the red lines represent the internal tiles bounds
 
-```
-$ aiocogeo create-tms https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif
+We can then click on a mercator tile and see how much requests GDAL/RASTERIO does.
 
-{
- "title": "Tile matrix for https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif",
- "identifier": "902b0312-2da6-4873-92f7-7a8b3480cef2",
- "supportedCRS": "http://www.opengis.net/def/crs/EPSG/0/32634",
- "tileMatrix": [
-  {
-   "identifier": "0",
-   "topLeftCorner": [
-    699960.0,
-    3600000.0
-   ],
-   "tileWidth": 256,
-   "tileHeight": 256,
-   "matrixWidth": 2,
-   "matrixHeight": 2,
-   "scaleDenominator": 1139950.166112957
-  },
-  {
-   "identifier": "1",
-   "topLeftCorner": [
-    699960.0,
-    3600000.0
-   ],
-   "tileWidth": 256,
-   "tileHeight": 256,
-   "matrixWidth": 3,
-   "matrixHeight": 3,
-   "scaleDenominator": 570804.741110418
-  },
-  {
-   "identifier": "2",
-   "topLeftCorner": [
-    699960.0,
-    3600000.0
-   ],
-   "tileWidth": 256,
-   "tileHeight": 256,
-   "matrixWidth": 6,
-   "matrixHeight": 6,
-   "scaleDenominator": 285610.23826865054
-  },
-  {
-   "identifier": "3",
-   "topLeftCorner": [
-    699960.0,
-    3600000.0
-   ],
-   "tileWidth": 256,
-   "tileHeight": 256,
-   "matrixWidth": 11,
-   "matrixHeight": 11,
-   "scaleDenominator": 142857.14285714287
-  },
-  {
-   "identifier": "4",
-   "topLeftCorner": [
-    699960.0,
-    3600000.0
-   ],
-   "tileWidth": 512,
-   "tileHeight": 512,
-   "matrixWidth": 11,
-   "matrixHeight": 11,
-   "scaleDenominator": 71428.57142857143
-  }
- ]
-}
-```
-
-TMS levels are ordered from lower to higher, thus the `raw` tiles are the last TMS level (`4`)
-
-```
-# Internal raw tiles grids
-$ aiocogeo create-tms https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif | morecantile tms-to-geojson --level 4 --collect > B05_raw.geojson
-
-# Mercator grid at zoom 12
-$ rio bounds https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif  | supermercado burn 12 | mercantile shapes --collect > B05_zoom12.geojson
-```
-
-![](https://user-images.githubusercontent.com/10407788/84295959-4ba72a00-ab19-11ea-977f-726f37121dfb.png)
+![](https://user-images.githubusercontent.com/10407788/103529132-65c5a280-4e85-11eb-96e2-f59e915c8ed8.png)
 
 ## Contribution & Development
 
