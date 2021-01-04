@@ -1,5 +1,5 @@
 
-## 0.1.0 (TBD)
+## 0.1.0 (2021-01-04)
 
 * add web UI for VSI stats visualization
 * add starlette middleware
