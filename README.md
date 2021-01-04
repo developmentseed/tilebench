@@ -60,7 +60,7 @@ app.add_middleware(VSIStatsMiddleware)
 The middleware will add a `vsi-stats` entrie in the response headers in form of:
 
 ```
-vsi-stats: head;count=1, get;count=2;size=196608, ranges; values=0-65535|65536-196607
+vsi-stats: list;count=1, head;count=1, get;count=2;size=196608, ranges; values=0-65535|65536-196607
 ```
 
 ## Command Line Interface (CLI)

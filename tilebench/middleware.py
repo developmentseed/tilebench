@@ -40,10 +40,15 @@ class VSIStatsMiddleware(BaseHTTPMiddleware):
 
         if rio_stream or curl_stream:
             results = analyse_logs(rio_stream, curl_stream,)
-            get = "get;count={count};size={bytes}".format(**results["GET"])
-            ranges = "ranges; values={}".format("|".join(results["GET"]["ranges"]))
-            head = "head;count={count}".format(**results["HEAD"])
-            response.headers["VSI-Stats"] = f"{head}, {get}, {ranges}"
+            head_results = "head;count={count}".format(**results["HEAD"])
+            list_results = "list;count={count}".format(**results["LIST"])
+            get_results = "get;count={count};size={bytes}".format(**results["GET"])
+            ranges_results = "ranges; values={}".format(
+                "|".join(results["GET"]["ranges"])
+            )
+            response.headers[
+                "VSI-Stats"
+            ] = f"{list_results}, {head_results}, {get_results}, {ranges_results}"
 
         return response
 
