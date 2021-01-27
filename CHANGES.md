@@ -1,4 +1,8 @@
 
+## 0.1.1 (2021-01-27)
+
+* update requirements
+
 ## 0.1.0 (2021-01-04)
 
 * add web UI for VSI stats visualization

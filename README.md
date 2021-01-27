@@ -6,7 +6,7 @@
 
 Inspect HEAD/LIST/GET requests withing Rasterio.
 
-Note: This will be covered in NEXT GDAL release https://github.com/OSGeo/gdal/pull/2742
+Note: In GDAL 3.2, logging capabilities for /vsicurl, /vsis3 and the like was added (ref: https://github.com/OSGeo/gdal/pull/2742).
 
 ## API
 
@@ -43,12 +43,11 @@ data, mask = _read_tile(
 > 2020-07-13T16:59:42.654071-0400 | TILEBENCH | {"LIST": {"count": 0}, "HEAD": {"count": 1}, "GET": {"count": 3, "bytes": 1464479, "ranges": ["0-16383", "33328080-34028784", "36669144-37416533"]}, "Timing": 3.007672071456909}
 ```
 
-### Starlette Middleware
+## Starlette Middleware
 
 In addition of the `viz` CLI we added a starlette middleware to easily integrate VSI statistics in your web services.
 
 ```python
-
 from fastapi import FastAPI
 
 from tilebench.middleware import VSIStatsMiddleware
@@ -133,7 +132,7 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
 }
 ```
 
-## GDAL config options
+### GDAL config options
 
 - **GDAL_DISABLE_READDIR_ON_OPEN**
 - **GDAL_INGESTED_BYTES_AT_OPEN**
@@ -146,7 +145,7 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
 
 See the full list at https://gdal.org/user/configoptions.html
 
-## Visulizing Internal tiles Vs Mercator grid
+## Internal tiles Vs Mercator grid
 
 ```
 $ tilebench viz https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif --config GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR

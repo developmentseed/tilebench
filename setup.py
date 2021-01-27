@@ -6,17 +6,14 @@ with open("README.md") as f:
     long_description = f.read()
 
 inst_reqs = [
-    "wurlitzer",
+    "boto3",
+    "fastapi[all]",
+    "geojson-pydantic",
     "loguru",
     "rasterio",
-    "rio-tiler>=2.0.0rc4",
-    "boto3",
+    "rio-tiler>=2.0,<2.1",
     "supermercado",
-    "fastapi",
-    "uvicorn",
-    "geojson_pydantic",
-    "aiofiles",
-    "jinja2",
+    "wurlitzer",
 ]
 extra_reqs = {
     "test": ["pytest", "pytest-cov", "pytest-asyncio"],
@@ -30,7 +27,7 @@ setup(
     description=u"",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    python_requires=">=3",
+    python_requires=">=3.6",
     keywords="",
     author=u"Vincent Sarago",
     author_email="vincent@developmentseed.org",
