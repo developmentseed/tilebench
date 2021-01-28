@@ -15,9 +15,10 @@ from rasterio.path import parse_path
 from rasterio.warp import calculate_default_transform, transform_geom
 from rio_tiler.io import COGReader
 from starlette.requests import Request
-from starlette.responses import HTMLResponse
+from starlette.responses import HTMLResponse, Response
 from starlette.templating import Jinja2Templates
 
+from tilebench import Timer
 from tilebench.middleware import NoCacheMiddleware, VSIStatsMiddleware
 from tilebench.ressources.responses import GeoJSONResponse
 
@@ -87,10 +88,14 @@ class TileDebug:
         """Register routes to the FastAPI app."""
 
         @self.router.get(r"/tiles/{z}/{x}/{y}")
-        def tile(z: int, x: int, y: int):
+        def tile(response: Response, z: int, x: int, y: int):
             """Handle /tiles requests."""
-            with COGReader(self.src_path) as src_dst:
-                _ = src_dst.tile(x, y, z)
+            with Timer() as t:
+                with COGReader(self.src_path) as src_dst:
+                    _ = src_dst.tile(x, y, z)
+            response.headers[
+                "server-timing"
+            ] = f"dataread; dur={round(t.elapsed * 1000, 2)}"
             return "OK"
 
         @self.router.get(
@@ -163,7 +168,6 @@ class TileDebug:
             """return geojson."""
             options = {"OVERVIEW_LEVEL": ovr_level - 1} if ovr_level else {}
             with rasterio.open(self.src_path, **options) as src_dst:
-
                 feats = []
                 for _, window in list(src_dst.block_windows(1)):
                     geom = bbox_to_feature(src_dst.window_bounds(window))

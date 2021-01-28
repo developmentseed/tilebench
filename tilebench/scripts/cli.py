@@ -26,6 +26,15 @@ def cli():
 @click.option("--tilesize", type=int, default=256)
 @click.option("--zoom", type=int)
 @click.option(
+    "--add-kernels",
+    is_flag=True,
+    default=False,
+    help="Add GDAL WarpKernels to the output.",
+)
+@click.option(
+    "--add-stdout", is_flag=True, default=False, help="Print standard outputs.",
+)
+@click.option(
     "--config",
     "config",
     metavar="NAME=VALUE",
@@ -33,7 +42,7 @@ def cli():
     callback=options._cb_key_val,
     help="GDAL configuration options.",
 )
-def profile(input, tile, tilesize, zoom, config):
+def profile(input, tile, tilesize, zoom, add_kernels, add_stdout, config):
     """Profile COGReader Mercator Tile read."""
     if not tile:
         with COGReader(input) as cog:
@@ -48,7 +57,13 @@ def profile(input, tile, tilesize, zoom, config):
     else:
         tile_z, tile_x, tile_y = list(map(int, tile.split("-")))
 
-    @profiler(quiet=True, add_to_return=True, config=config)
+    @profiler(
+        kernels=add_kernels,
+        quiet=True,
+        add_to_return=True,
+        raw=add_stdout,
+        config=config,
+    )
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
         with COGReader(src_path) as cog:
             return cog.tile(x, y, z, tilesize=tilesize)
@@ -109,8 +124,8 @@ class MbxTokenType(click.ParamType):
 @click.argument("src_path", type=str, nargs=1, required=True)
 @click.option(
     "--style",
-    type=click.Choice(["satellite", "basic"]),
-    default="basic",
+    type=click.Choice(["dark", "satellite", "basic"]),
+    default="dark",
     help="Mapbox basemap",
 )
 @click.option("--port", type=int, default=8080, help="Webserver port (default: 8080)")

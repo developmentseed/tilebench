@@ -382,7 +382,14 @@
                         html += `<tr><td class="align-l">LIST</td><td class="px3 align-r">${listCount}</td></tr>`
                         html += `<tr><td class="align-l">HEAD</td><td class="px3 align-r">${headCount}</td></tr>`
                         html += `<tr><td class="align-l">GET</td><td class="px3 align-r">${getCount}</td></tr>`
-                        html += `<tr><td class="align-l">GET (size)</td><td class="px3 align-r">${getSize}</td></tr>`
+                        html += `<tr><td class="align-l">GET (ms)</td><td class="px3 align-r">${getSize}</td></tr>`
+
+                        const timing = data.get("server-timing")
+                        if (timing) {
+                            const dataread = timing.split('=')[1]
+                            html += `<tr><td class="align-l">Time (size)</td><td class="px3 align-r">${dataread}</td></tr>`
+                        }
+
                         html += '</table>'
                         new mapboxgl.Popup()
                             .setLngLat(e.lngLat)

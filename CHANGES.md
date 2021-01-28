@@ -1,3 +1,8 @@
+## 0.2.0 (2021-01-28)
+
+* add warp-kernels in output in `profile` CLI
+* add rasterio/curl stdout in output
+* add dataread time in Viz
 
 ## 0.1.1 (2021-01-27)
 

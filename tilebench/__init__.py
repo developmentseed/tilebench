@@ -5,7 +5,7 @@ import logging
 import sys
 import time
 from io import StringIO
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import rasterio
 from loguru import logger as log
@@ -18,13 +18,10 @@ log.remove()
 log.add(sys.stderr, format=fmt)
 
 
-def analyse_logs(rio_stream: StringIO, curl_stream: StringIO) -> Dict[str, Any]:
+def analyse_logs(rio_lines: List[str], curl_lines: List[str]) -> Dict[str, Any]:
     """Analyse Rasterio and CURL logs."""
-    lines = rio_stream.getvalue().splitlines()
-    curl_lines = curl_stream.read().splitlines()
-
     # LIST
-    list_requests = [line for line in lines if " VSICURL: GetFileList" in line]
+    list_requests = [line for line in rio_lines if " VSICURL: GetFileList" in line]
     list_summary = {
         "count": len(list_requests),
     }
@@ -41,7 +38,7 @@ def analyse_logs(rio_stream: StringIO, curl_stream: StringIO) -> Dict[str, Any]:
 
     # Rasterio GET
     # Rasterio only log successfull requests
-    get_requests = [line for line in lines if "VSICURL: Downloading" in line]
+    get_requests = [line for line in rio_lines if "VSICURL: Downloading" in line]
     get_values = [map(int, get.split(" ")[4].split("-")) for get in get_requests]
     get_values_str = [get.split(" ")[4] for get in get_requests]
     data_transfer = sum([j - i + 1 for i, j in get_values])
@@ -52,7 +49,9 @@ def analyse_logs(rio_stream: StringIO, curl_stream: StringIO) -> Dict[str, Any]:
         "ranges": get_values_str,
     }
 
-    warp_kernel = [line.split(" ")[-2:] for line in lines if "GDALWarpKernel" in line]
+    warp_kernel = [
+        line.split(" ")[-2:] for line in rio_lines if "GDALWarpKernel" in line
+    ]
 
     return {
         "LIST": list_summary,
@@ -66,6 +65,7 @@ def profile(
     kernels: bool = False,
     add_to_return: bool = False,
     quiet: bool = False,
+    raw: bool = False,
     config: Optional[Dict] = None,
 ):
     """Profiling."""
@@ -92,11 +92,18 @@ def profile(
             logger.removeHandler(handler)
             handler.close()
 
-            results = analyse_logs(rio_stream, curl_stream)
+            rio_lines = rio_stream.getvalue().splitlines()
+            curl_lines = curl_stream.read().splitlines()
+
+            results = analyse_logs(rio_lines, curl_lines)
             results["Timing"] = t.elapsed
 
             if not kernels:
                 results.pop("WarpKernels")
+
+            if raw:
+                results["curl"] = curl_lines
+                results["rasterio"] = rio_lines
 
             if not quiet:
                 log.info(json.dumps(results))
