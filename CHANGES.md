@@ -1,3 +1,8 @@
+
+## 0.2.1 (2021-02-19)
+
+* fix typo in IU
+
 ## 0.2.0 (2021-01-28)
 
 * add warp-kernels in output in `profile` CLI
