@@ -81,7 +81,9 @@ class TileDebug:
         self.register_routes()
         self.app.include_router(self.router)
         self.app.mount("/static", StaticFiles(directory=static_dir), name="static")
-        self.app.add_middleware(VSIStatsMiddleware, config=self.config)
+        self.app.add_middleware(
+            VSIStatsMiddleware, config=self.config, exclude_paths=["/info.geojson"]
+        )
         self.app.add_middleware(NoCacheMiddleware)
 
     def register_routes(self):

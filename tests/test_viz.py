@@ -32,6 +32,7 @@ def test_viz():
     response = client.get("/info.geojson")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/geo+json"
+    assert "VSI-Stats" not in response.headers
 
     response = client.get("/tiles.geojson?ovr_level=0")
     assert response.status_code == 200
