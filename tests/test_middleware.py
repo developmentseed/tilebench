@@ -13,7 +13,7 @@ def test_middleware():
     """simple test."""
     app = FastAPI()
     app.add_middleware(NoCacheMiddleware)
-    app.add_middleware(VSIStatsMiddleware, config={})
+    app.add_middleware(VSIStatsMiddleware, config={}, exclude_paths=["/skip"])
 
     @app.get("/info")
     def head():
@@ -28,6 +28,10 @@ def test_middleware():
         with COGReader(COG_PATH) as cog:
             cog.tile(2314, 1667, 12)
             return "I got tile"
+
+    @app.get("/skip")
+    def skip():
+        return "I've been skipped"
 
     client = TestClient(app)
 
@@ -49,3 +53,8 @@ def test_middleware():
     assert "list;count=" in stats
     assert "head;count=" in stats
     assert "get;count=" in stats
+
+    response = client.get("/skip")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/json"
+    assert "VSI-Stats" not in response.headers

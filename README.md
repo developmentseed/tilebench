@@ -62,6 +62,12 @@ The middleware will add a `vsi-stats` entrie in the response headers in form of:
 vsi-stats: list;count=1, head;count=1, get;count=2;size=196608, ranges; values=0-65535|65536-196607
 ```
 
+Some paths may be excluded from being handeld by the middleware by the `exclude_paths` argument:
+
+```python
+app.add_middleware(VSIStatsMiddleware, exclude_paths=["/foo", "/bar"])
+```
+
 ## Command Line Interface (CLI)
 
 ```
