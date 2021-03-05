@@ -20,7 +20,7 @@ from starlette.templating import Jinja2Templates
 
 from tilebench import Timer
 from tilebench.middleware import NoCacheMiddleware, VSIStatsMiddleware
-from tilebench.ressources.responses import GeoJSONResponse
+from tilebench.resources.responses import GeoJSONResponse
 
 template_dir = str(pathlib.Path(__file__).parent.joinpath("templates"))
 static_dir = str(pathlib.Path(__file__).parent.joinpath("static"))
