@@ -1,4 +1,9 @@
 
+## 0.3.0 (2021-03-05)
+
+* add `exclude_paths` options in `VSIStatsMiddleware` to exclude some endpoints (author @drnextgis, https://github.com/developmentseed/tilebench/pull/10)
+* renamed `ressources`  to `resources`
+
 ## 0.2.1 (2021-02-19)
 
 * fix typo in UI
