@@ -26,7 +26,7 @@ meta = info("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-co
 
 ```python
 from tilebench import profile
-from rio_tiler.io import cogeo as COGReader
+from rio_tiler.io import COGReader
 
 @profile()
 def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
