@@ -78,6 +78,16 @@
             </select>
             <div class='select-arrow color-black'></div>
         </div>
+
+        <div class='txt-h5 mt24 mb6 color-black'>
+            Overview Resolution
+        </div>
+        <div id='res-merc' class='txt-normal'></div>
+
+        <div class='txt-h5 mt6 mb6 color-black'>
+            Zoom Resolution
+        </div>
+        <div id='res-gmaps' class='txt-normal'></div>
     </div>
 
     <div id='map'>
@@ -325,9 +335,12 @@
         }
 
         const update_viz = () => {
-            level = parseInt(document.getElementById('ovr-selector').selectedOptions[0].getAttribute("level"))
+            const level = parseInt(document.getElementById('ovr-selector').selectedOptions[0].getAttribute("level"))
+            const zoom = parseInt(document.getElementById('ovr-selector').selectedOptions[0].getAttribute("zoom"))
             add_mercator_grid(scope.data.properties.ifd[level])
             add_tile_grid(scope.data.properties.ifd[level])
+            document.getElementById('res-gmaps').innerText = ((2 * merc.MAXEXTENT) / merc.Ac[zoom]).toFixed(4)
+            document.getElementById('res-merc').innerText = scope.data.properties.ifd[level]["MercatorResolution"].toFixed(4)
         }
 
         document.getElementById('ovr-selector').addEventListener('change', (e) => {
