@@ -97,7 +97,7 @@ $ tilebench get-zooms https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-
 $ tilebench random https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif --zoom 12
 12-2314-1667
 
-$ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif 12-2314-1667 --config GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR | jq
+$ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif --tile 12-2314-1667 --config GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR | jq
 {
   "LIST": {
     "count": 0
@@ -117,7 +117,7 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
   "Timing": 2.377608060836792
 }
 
-$ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif 12-2314-1667 --config GDAL_DISABLE_READDIR_ON_OPEN=FALSE | jq
+$ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif --tile 12-2314-1667 --config GDAL_DISABLE_READDIR_ON_OPEN=FALSE | jq
 {
   "LIST": {
     "count": 1
