@@ -1,1 +1,0 @@
-"""tilebench viz ressources."""

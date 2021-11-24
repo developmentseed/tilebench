@@ -20,7 +20,7 @@ from starlette.templating import Jinja2Templates
 
 from tilebench import Timer
 from tilebench.middleware import NoCacheMiddleware, VSIStatsMiddleware
-from tilebench.ressources.responses import GeoJSONResponse
+from tilebench.resources.responses import GeoJSONResponse
 
 template_dir = str(pathlib.Path(__file__).parent.joinpath("templates"))
 static_dir = str(pathlib.Path(__file__).parent.joinpath("static"))
@@ -80,7 +80,9 @@ class TileDebug:
         self.register_routes()
         self.app.include_router(self.router)
         self.app.mount("/static", StaticFiles(directory=static_dir), name="static")
-        self.app.add_middleware(VSIStatsMiddleware, config=self.config)
+        self.app.add_middleware(
+            VSIStatsMiddleware, config=self.config, exclude_paths=["/info.geojson"]
+        )
         self.app.add_middleware(NoCacheMiddleware)
 
     def register_routes(self):

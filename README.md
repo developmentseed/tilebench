@@ -26,7 +26,7 @@ meta = info("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-co
 
 ```python
 from tilebench import profile
-from rio_tiler.io import cogeo as COGReader
+from rio_tiler.io import COGReader
 
 @profile()
 def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
@@ -60,6 +60,12 @@ The middleware will add a `vsi-stats` entrie in the response headers in form of:
 
 ```
 vsi-stats: list;count=1, head;count=1, get;count=2;size=196608, ranges; values=0-65535|65536-196607
+```
+
+Some paths may be excluded from being handeld by the middleware by the `exclude_paths` argument:
+
+```python
+app.add_middleware(VSIStatsMiddleware, exclude_paths=["/foo", "/bar"])
 ```
 
 ## Command Line Interface (CLI)
@@ -171,7 +177,7 @@ $ cd tilebench
 $ pip install -e .[dev]
 ```
 
-**Python >=3.7 only**
+**Python >=3.8 only**
 
 This repo is set to use `pre-commit` to run *isort*, *flake8*, *pydocstring*, *black* ("uncompromising Python code formatter") and mypy when committing new code.
 

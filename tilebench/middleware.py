@@ -2,7 +2,7 @@
 
 import logging
 from io import StringIO
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import rasterio
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -16,13 +16,23 @@ from tilebench import analyse_logs
 class VSIStatsMiddleware(BaseHTTPMiddleware):
     """MiddleWare to add VSI stats in response headers."""
 
-    def __init__(self, app: ASGIApp, config: Optional[Dict] = None) -> None:
+    def __init__(
+        self,
+        app: ASGIApp,
+        config: Optional[Dict] = None,
+        exclude_paths: Optional[List] = None,
+    ) -> None:
         """Init Middleware."""
         super().__init__(app)
         self.config: Dict = config or {}
+        self.exclude_paths: List = exclude_paths or []
 
     async def dispatch(self, request: Request, call_next):
         """Add VSI stats in headers."""
+
+        if request.scope["path"] in self.exclude_paths:
+            return await call_next(request)
+
         rio_stream = StringIO()
         logger = logging.getLogger("rasterio")
         logger.setLevel(logging.DEBUG)
