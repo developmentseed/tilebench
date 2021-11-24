@@ -23,7 +23,6 @@ class VSIStatsMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         """Add VSI stats in headers."""
-
         rio_stream = StringIO()
         logger = logging.getLogger("rasterio")
         logger.setLevel(logging.DEBUG)

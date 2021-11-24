@@ -11,7 +11,8 @@ COG_PATH = "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cog
 def test_viz():
     """Should work as expected (create TileServer object)."""
     app = TileDebug(
-        src_path=COG_PATH, config={"GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR"},
+        src_path=COG_PATH,
+        config={"GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR"},
     )
     assert app.port == 8080
     assert app.endpoint == "http://127.0.0.1:8080"

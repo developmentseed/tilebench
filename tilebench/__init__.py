@@ -1,4 +1,4 @@
-"""tilebench"""
+"""Tilebench."""
 
 import json
 import logging
@@ -38,7 +38,7 @@ def analyse_logs(rio_lines: List[str], curl_lines: List[str]) -> Dict[str, Any]:
 
     # Rasterio GET
     # Rasterio only log successfull requests
-    get_requests = [line for line in rio_lines if "VSICURL: Downloading" in line]
+    get_requests = [line for line in rio_lines if ": Downloading" in line]
     get_values = [map(int, get.split(" ")[4].split("-")) for get in get_requests]
     get_values_str = [get.split(" ")[4] for get in get_requests]
     data_transfer = sum([j - i + 1 for i, j in get_values])
@@ -71,10 +71,10 @@ def profile(
     """Profiling."""
 
     def wrapper(func: Callable):
-        """Function Wrapper."""
+        """Wrap a function."""
 
         def wrapped_f(*args, **kwargs):
-            """Wrapped functions."""
+            """Wrapped function."""
             rio_stream = StringIO()
             logger = logging.getLogger("rasterio")
             logger.setLevel(logging.DEBUG)
@@ -130,11 +130,11 @@ class Timer(object):
     """Time a code block."""
 
     def __enter__(self):
-        """Starts timer."""
+        """Start timer."""
         self.start = time.time()
         return self
 
     def __exit__(self, ty, val, tb):
-        """Stops timer."""
+        """Stop timer."""
         self.end = time.time()
         self.elapsed = self.end - self.start
