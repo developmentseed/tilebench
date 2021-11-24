@@ -177,7 +177,7 @@ $ cd tilebench
 $ pip install -e .[dev]
 ```
 
-**Python >=3.8 only**
+**pre-commit**
 
 This repo is set to use `pre-commit` to run *isort*, *flake8*, *pydocstring*, *black* ("uncompromising Python code formatter") and mypy when committing new code.
 
