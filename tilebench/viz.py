@@ -1,4 +1,4 @@
-"""tilebench"""
+"""Tilebench."""
 
 import pathlib
 from typing import Dict, Optional, Tuple
@@ -31,7 +31,8 @@ WGS84_CRS = CRS.from_epsg(4326)
 
 
 def bbox_to_feature(
-    bbox: Tuple[float, float, float, float], properties: Optional[Dict] = None,
+    bbox: Tuple[float, float, float, float],
+    properties: Optional[Dict] = None,
 ) -> Feature:
     """Create a GeoJSON feature polygon from a bounding box."""
     return Feature(
@@ -62,10 +63,8 @@ class TileDebug:
 
     app: FastAPI = attr.ib(default=attr.Factory(FastAPI))
 
-    token: Optional[str] = attr.ib(default=None)
     port: int = attr.ib(default=8080)
     host: str = attr.ib(default="127.0.0.1")
-    style: str = attr.ib(default="basic")
     config: Dict = attr.ib(default=dict)
 
     router: Optional[APIRouter] = attr.ib(init=False)
@@ -107,9 +106,10 @@ class TileDebug:
             response_class=GeoJSONResponse,
         )
         def info():
-            """return geojson."""
+            """Return a geojson."""
             with COGReader(self.src_path) as src_dst:
                 info = src_dst.info().dict(exclude_none=True)
+                info["crs"] = src_dst.dataset.crs.to_epsg()
                 ovr = src_dst.dataset.overviews(1)
                 info["overviews"] = len(ovr)
                 dst_affine, _, _ = calculate_default_transform(
@@ -173,7 +173,11 @@ class TileDebug:
                 feats = []
                 for _, window in list(src_dst.block_windows(1)):
                     geom = bbox_to_feature(src_dst.window_bounds(window))
-                    geom = transform_geom(src_dst.crs, WGS84_CRS, geom.geometry.dict(),)
+                    geom = transform_geom(
+                        src_dst.crs,
+                        WGS84_CRS,
+                        geom.geometry.dict(),
+                    )
                     feats.append(
                         {"type": "Feature", "geometry": geom, "properties": {}}
                     )
@@ -196,8 +200,6 @@ class TileDebug:
                     "tile_endpoint": request.url_for(
                         "tile", z="${z}", x="${x}", y="${y}"
                     ),
-                    "mapbox_access_token": self.token,
-                    "mapbox_style": self.style,
                 },
                 media_type="text/html",
             )

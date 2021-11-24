@@ -1,7 +1,6 @@
 """tilebench CLI."""
 
 import json
-import os
 from random import randint, sample
 
 import click
@@ -17,7 +16,7 @@ from tilebench.viz import TileDebug
 # The CLI command group.
 @click.group(help="Command line interface for the tilebench Python package.")
 def cli():
-    """Execute the main morecantile command"""
+    """Execute the main morecantile command."""
 
 
 @cli.command()
@@ -32,7 +31,10 @@ def cli():
     help="Add GDAL WarpKernels to the output.",
 )
 @click.option(
-    "--add-stdout", is_flag=True, default=False, help="Print standard outputs.",
+    "--add-stdout",
+    is_flag=True,
+    default=False,
+    help="Print standard outputs.",
 )
 @click.option(
     "--config",
@@ -97,50 +99,14 @@ def random(input, zoom):
     click.echo(f"{zoom}-{x}-{y}")
 
 
-class MbxTokenType(click.ParamType):
-    """Mapbox token type."""
-
-    name = "token"
-
-    def convert(self, value, param, ctx):
-        """Validate token."""
-        try:
-            if not value:
-                return ""
-
-            assert value.startswith("pk")
-            return value
-
-        except (AttributeError, AssertionError):
-            raise click.ClickException(
-                "Mapbox access token must be public (pk). "
-                "Please sign up at https://www.mapbox.com/signup/ to get a public token. "
-                "If you already have an account, you can retreive your "
-                "token at https://www.mapbox.com/account/."
-            )
-
-
 @cli.command()
 @click.argument("src_path", type=str, nargs=1, required=True)
-@click.option(
-    "--style",
-    type=click.Choice(["dark", "satellite", "basic"]),
-    default="dark",
-    help="Mapbox basemap",
-)
 @click.option("--port", type=int, default=8080, help="Webserver port (default: 8080)")
 @click.option(
     "--host",
     type=str,
     default="127.0.0.1",
     help="Webserver host url (default: 127.0.0.1)",
-)
-@click.option(
-    "--mapbox-token",
-    type=MbxTokenType(),
-    metavar="TOKEN",
-    default=lambda: os.environ.get("MAPBOX_ACCESS_TOKEN", ""),
-    help="Pass Mapbox token",
 )
 @click.option(
     "--server-only",
@@ -156,18 +122,14 @@ class MbxTokenType(click.ParamType):
     callback=options._cb_key_val,
     help="GDAL configuration options.",
 )
-def viz(
-    src_path, style, port, host, mapbox_token, server_only, config,
-):
+def viz(src_path, port, host, server_only, config):
     """WEB UI to visualize VSI statistics for a web mercator tile requests."""
     config = config or {}
 
     application = TileDebug(
         src_path=src_path,
-        token=mapbox_token,
         port=port,
         host=host,
-        style=style,
         config=config,
     )
     if not server_only:

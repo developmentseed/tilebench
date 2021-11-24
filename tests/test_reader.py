@@ -8,20 +8,25 @@ COG_PATH = "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cog
 
 
 def test_simple():
-    """simple test."""
+    """Simple test."""
 
     @profiler()
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
         with COGReader(src_path) as cog:
             return cog.tile(x, y, z, tilesize=tilesize)
 
-    data, mask = _read_tile(COG_PATH, 2314, 1667, 12,)
+    data, mask = _read_tile(
+        COG_PATH,
+        2314,
+        1667,
+        12,
+    )
     assert data.shape
     assert mask.shape
 
 
 def test_output():
-    """checkout profile output."""
+    """Checkout profile output."""
 
     @profiler(
         kernels=True,
@@ -33,7 +38,12 @@ def test_output():
         with COGReader(src_path) as cog:
             return cog.tile(x, y, z, tilesize=tilesize)
 
-    (data, mask), stats = _read_tile(COG_PATH, 2314, 1667, 12,)
+    (data, mask), stats = _read_tile(
+        COG_PATH,
+        2314,
+        1667,
+        12,
+    )
     assert data.shape
     assert mask.shape
     assert stats

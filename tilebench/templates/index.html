@@ -68,7 +68,13 @@
 
     <body>
 
-    <div id='menu' class='px12 pt12 absolute z2'>
+    <div id='menu' class='px12 pt12 absolute z2 bg-white'>
+        <div class='txt-h5 mt6 mb6 color-black'>
+            Raster Info
+        </div>
+        <div id='raster-crs' class='txt-normal'></div>
+        <div id='raster-size' class='txt-normal'></div>
+
         <div class='txt-h5 mt6 mb6 color-black'>
             Overview Level
         </div>
@@ -78,6 +84,16 @@
             </select>
             <div class='select-arrow color-black'></div>
         </div>
+
+        <div class='txt-h5 mt24 mb6 color-black'>
+            Overview Level Resolution
+        </div>
+        <div id='res-merc' class='txt-normal'></div>
+
+        <div class='txt-h5 mt6 mb6 color-black'>
+            Map Zoom Resolution
+        </div>
+        <div id='res-gmaps' class='txt-normal'></div>
     </div>
 
     <div id='map'>
@@ -92,27 +108,44 @@
     </div>
 
     <script>
-    mapboxgl.accessToken = '{{ mapbox_access_token  }}'
-
     const scope = {data: undefined}
     const merc = new SphericalMercator({ size: 256 });
 
     const info_endpoint = '{{ geojson_endpoint }}'
     const grid_endpoint = '{{ grid_endpoint }}'
 
-    let style
-    if (mapboxgl.accessToken !== '') {
-      style = 'mapbox://styles/mapbox/{{ mapbox_style }}-v9'
-    } else {
-      style = { version: 8, sources: {}, layers: [] }
-    }
-
+    mapboxgl.accessToken = ''
     var map = new mapboxgl.Map({
         container: 'map',
-        style: style,
+        style: {
+            version: 8,
+            sources: {
+            'toner-lite': {
+                type: 'raster',
+                tiles: [
+                'https://stamen-tiles-a.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png',
+                'https://stamen-tiles-b.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png',
+                'https://stamen-tiles-c.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png',
+                'https://stamen-tiles-d.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png'
+                ],
+                tileSize: 256,
+                attribution:
+                'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
+            }
+            },
+            layers: [
+            {
+                'id': 'basemap',
+                'type': 'raster',
+                'source': 'toner-lite',
+                'minzoom': 0,
+                'maxzoom': 20
+            }
+            ]
+        },
         center: [0, 0],
         zoom: 1
-    })
+        })
 
     /**
      * from https://github.com/mapbox/tilebelt/blob/master/index.js#L175-L195
@@ -241,10 +274,12 @@
                     ifd = data.properties.ifd[i]
                     l.setAttribute('level', ifd.Level)
                     l.setAttribute('zoom', ifd.MercatorZoom)
-                    l.text = `Level: ${ifd.Level} - Zoom ${ifd.MercatorZoom}`
+                    l.text = `Level: ${ifd.Level} (Zoom ${ifd.MercatorZoom})`
                     sel.appendChild(l)
                     if (i === novr - 1) l.selected = "selected"
                 }
+                document.getElementById('raster-crs').innerText = `CRS: epsg:${scope.data.properties["crs"]}`
+                document.getElementById('raster-size').innerText = `Size: ${scope.data.properties["height"]}x${scope.data.properties["width"]}`
 
                 return update_viz()
             })
@@ -325,9 +360,12 @@
         }
 
         const update_viz = () => {
-            level = parseInt(document.getElementById('ovr-selector').selectedOptions[0].getAttribute("level"))
+            const level = parseInt(document.getElementById('ovr-selector').selectedOptions[0].getAttribute("level"))
+            const zoom = parseInt(document.getElementById('ovr-selector').selectedOptions[0].getAttribute("zoom"))
             add_mercator_grid(scope.data.properties.ifd[level])
             add_tile_grid(scope.data.properties.ifd[level])
+            document.getElementById('res-gmaps').innerText = ((2 * merc.MAXEXTENT) / merc.Ac[zoom]).toFixed(4)
+            document.getElementById('res-merc').innerText = scope.data.properties.ifd[level]["MercatorResolution"].toFixed(4)
         }
 
         document.getElementById('ovr-selector').addEventListener('change', (e) => {

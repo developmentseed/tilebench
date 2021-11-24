@@ -10,21 +10,21 @@ COG_PATH = "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cog
 
 
 def test_middleware():
-    """simple test."""
+    """Simple test."""
     app = FastAPI()
     app.add_middleware(NoCacheMiddleware)
     app.add_middleware(VSIStatsMiddleware, config={}, exclude_paths=["/skip"])
 
     @app.get("/info")
     def head():
-        """get info."""
+        """Get info."""
         with COGReader(COG_PATH) as cog:
             cog.info()
             return "I got info"
 
     @app.get("/tile")
     def tile():
-        """read tile."""
+        """Read tile."""
         with COGReader(COG_PATH) as cog:
             cog.tile(2314, 1667, 12)
             return "I got tile"

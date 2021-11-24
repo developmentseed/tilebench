@@ -34,6 +34,7 @@ function SphericalMercator(options) {
     this.Cc = cache[this.size].Cc;
     this.zc = cache[this.size].zc;
     this.Ac = cache[this.size].Ac;
+    this.MAXEXTENT = MAXEXTENT;
 };
 
 // Convert lon lat to screen pixel value
