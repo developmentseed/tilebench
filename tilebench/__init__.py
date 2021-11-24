@@ -11,7 +11,7 @@ import rasterio
 from loguru import logger as log
 from wurlitzer import pipes
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 fmt = "{time} | TILEBENCH | {message}"
 log.remove()
