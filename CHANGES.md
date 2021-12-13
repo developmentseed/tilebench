@@ -1,13 +1,11 @@
 
-## 0.4.1 (2021-12-13)
+## 0.4.0 (2021-12-13)
 
 * update rio-tiler's version requirement
-
-## 0.4.0 (2021-11-24)
-
 * add more information about the raster in the Viz web page (author @drnextgis, https://github.com/developmentseed/tilebench/pull/14)
 * fix bug for latest GDAL/rasterio version
 * add default STAMEN basemap in *viz* and remove mapbox token/style options.
+* update fastapi requirement
 
 ## 0.3.0 (2021-03-05)
 
