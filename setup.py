@@ -7,13 +7,15 @@ with open("README.md") as f:
 
 inst_reqs = [
     "boto3",
-    "fastapi[all]",
+    "fastapi>=0.65,<0.68",
+    "jinja2>=2.11.2,<3.0.0",
     "geojson-pydantic",
     "loguru",
     "rasterio",
-    "rio-tiler>=2.1,<3.0",
+    "rio-tiler>=2.1,<3.1",
     "supermercado",
     "wurlitzer",
+    "uvicorn[standard]>=0.12.0,<0.14.0",
 ]
 extra_reqs = {
     "test": ["pytest", "pytest-cov", "pytest-asyncio"],

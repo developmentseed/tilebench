@@ -1,4 +1,8 @@
 
+## 0.4.1 (2021-12-13)
+
+* update rio-tiler's version requirement
+
 ## 0.4.0 (2021-11-24)
 
 * add more information about the raster in the Viz web page (author @drnextgis, https://github.com/developmentseed/tilebench/pull/14)

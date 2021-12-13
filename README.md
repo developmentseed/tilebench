@@ -1,12 +1,57 @@
 # tilebench
 
-[![CI](https://github.com/developmentseed/tilebench/workflows/CI/badge.svg)](https://github.com/developmentseed/tilebench/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/developmentseed/tilebench/branch/master/graph/badge.svg)](https://codecov.io/gh/developmentseed/tilebench)
-[![Packaging status](https://badge.fury.io/py/tilebench.svg)](https://badge.fury.io/py/tilebench)
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/10407788/145784365-7ce635d1-3971-4a94-856f-cd8b081f10c1.png" style="max-width: 800px;" alt="tilebench"></a>
+</p>
+<p align="center">
+  <em>Inspect HEAD/LIST/GET requests withing Rasterio</em>
+</p>
+<p align="center">
+  <a href="https://github.com/developmentseed/tilebench/actions?query=workflow%3ACI" target="_blank">
+      <img src="https://github.com/developmentseed/tilebench/workflows/CI/badge.svg" alt="Test">
+  </a>
+  <a href="https://codecov.io/gh/developmentseed/tilebench" target="_blank">
+      <img src="https://codecov.io/gh/developmentseed/tilebench/branch/master/graph/badge.svg" alt="Coverage">
+  </a>
+  <a href="https://pypi.org/project/tilebench" target="_blank">
+      <img src="https://img.shields.io/pypi/v/tilebench?color=%2334D058&label=pypi%20package" alt="Package version">
+  </a>
+  <a href="https://pypistats.org/packages/tilebench" target="_blank">
+      <img src="https://img.shields.io/pypi/dm/tilebench.svg" alt="Downloads">
+  </a>
+  <a href="https://github.com/developmentseed/tilebench/blob/master/LICENSE" target="_blank">
+      <img src="https://img.shields.io/github/license/developmentseed/tilebench.svg" alt="Downloads">
+  </a>
+</p>
+
+---
+
+**Source Code**: <a href="https://github.com/developmentseed/tilebench" target="_blank">https://github.com/developmentseed/tilebench</a>
+
+---
+
 
 Inspect HEAD/LIST/GET requests withing Rasterio.
 
 Note: In GDAL 3.2, logging capabilities for /vsicurl, /vsis3 and the like was added (ref: https://github.com/OSGeo/gdal/pull/2742).
+
+## Install
+
+You can install `tilebench` using pip
+
+```bash
+$ pip install -U pip
+$ pip install -U tilebench
+```
+
+or install from source:
+
+```bash
+$ git clone https://github.com/developmentseed/tilebench.git
+$ cd tilebench
+$ pip install -U pip
+$ pip install -e .
+```
 
 ## API
 
@@ -41,31 +86,6 @@ data, mask = _read_tile(
 )
 
 > 2020-07-13T16:59:42.654071-0400 | TILEBENCH | {"LIST": {"count": 0}, "HEAD": {"count": 1}, "GET": {"count": 3, "bytes": 1464479, "ranges": ["0-16383", "33328080-34028784", "36669144-37416533"]}, "Timing": 3.007672071456909}
-```
-
-## Starlette Middleware
-
-In addition of the `viz` CLI we added a starlette middleware to easily integrate VSI statistics in your web services.
-
-```python
-from fastapi import FastAPI
-
-from tilebench.middleware import VSIStatsMiddleware
-
-app = FastAPI()
-app.add_middleware(VSIStatsMiddleware)
-```
-
-The middleware will add a `vsi-stats` entrie in the response headers in form of:
-
-```
-vsi-stats: list;count=1, head;count=1, get;count=2;size=196608, ranges; values=0-65535|65536-196607
-```
-
-Some paths may be excluded from being handeld by the middleware by the `exclude_paths` argument:
-
-```python
-app.add_middleware(VSIStatsMiddleware, exclude_paths=["/foo", "/bar"])
 ```
 
 ## Command Line Interface (CLI)
@@ -138,16 +158,43 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
 }
 ```
 
-### GDAL config options
 
-- **GDAL_DISABLE_READDIR_ON_OPEN**
-- **GDAL_INGESTED_BYTES_AT_OPEN**
-- **CPL_VSIL_CURL_ALLOWED_EXTENSIONS**
-- **GDAL_CACHEMAX**,
+## Starlette Middleware
+
+**Warning**: This is highly experimental and should not be used in production (https://github.com/developmentseed/tilebench/issues/6)
+
+In addition of the `viz` CLI we added a starlette middleware to easily integrate VSI statistics in your web services.
+
+```python
+from fastapi import FastAPI
+
+from tilebench.middleware import VSIStatsMiddleware
+
+app = FastAPI()
+app.add_middleware(VSIStatsMiddleware)
+```
+
+The middleware will add a `vsi-stats` entry in the response `headers` in form of:
+
+```
+vsi-stats: list;count=1, head;count=1, get;count=2;size=196608, ranges; values=0-65535|65536-196607
+```
+
+Some paths may be excluded from being handeld by the middleware by the `exclude_paths` argument:
+
+```python
+app.add_middleware(VSIStatsMiddleware, exclude_paths=["/foo", "/bar"])
+```
+
+## GDAL config options
+
+- **GDAL_DISABLE_READDIR_ON_OPEN**: Allow or Disable listing of files in the directory (e.g external overview)
+- **GDAL_INGESTED_BYTES_AT_OPEN**: Control how many bytes GDAL will ingest when opening a dataset (useful when a file has a big header)
+- **CPL_VSIL_CURL_ALLOWED_EXTENSIONS**: Limit valid external files
+- **GDAL_CACHEMAX**: Cache size
 - **GDAL_HTTP_MERGE_CONSECUTIVE_RANGES**
 - **VSI_CACHE**
 - **VSI_CACHE_SIZE**
-...
 
 See the full list at https://gdal.org/user/configoptions.html
 
@@ -195,3 +242,15 @@ mypy.....................................................................Passed
 
 $ git push origin
 ```
+
+## License
+
+See [LICENSE](https://github.com//developmentseed/tilebench/blob/master/LICENSE)
+
+## Authors
+
+See [contributors](https://github.com/developmentseed/tilebench/graphs/contributors) for a listing of individual contributors.
+
+## Changes
+
+See [CHANGES.md](https://github.com/developmentseed/tilebench/blob/master/CHANGES.md).
