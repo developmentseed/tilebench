@@ -7,7 +7,7 @@ with open("README.md") as f:
 
 inst_reqs = [
     "aiofiles",
-    "fastapi>=0.65,<0.68",
+    "fastapi>=0.73",
     "jinja2>=2.11.2,<3.0.0",
     "geojson-pydantic",
     "loguru",

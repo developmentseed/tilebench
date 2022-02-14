@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from geojson_pydantic.features import Feature, FeatureCollection
 from rasterio.crs import CRS
 from rasterio.path import parse_path
+from rasterio.vrt import WarpedVRT
 from rasterio.warp import calculate_default_transform, transform_geom
 from rio_tiler.io import COGReader
 from starlette.requests import Request
@@ -107,26 +108,36 @@ class TileDebug:
         )
         def info():
             """Return a geojson."""
-            with COGReader(self.src_path) as src_dst:
-                info = src_dst.info().dict(exclude_none=True)
-                info["crs"] = src_dst.dataset.crs.to_epsg()
-                ovr = src_dst.dataset.overviews(1)
+            with rasterio.open(self.src_path) as src_dst:
+                width, height = src_dst.width, src_dst.height
+
+                info = {
+                    "width": width,
+                    "height": height,
+                }
+
+                with WarpedVRT(src_dst, crs="epsg:4326") as vrt:
+                    geographic_bounds = list(vrt.bounds)
+                info["bounds"] = geographic_bounds
+
+                info["crs"] = src_dst.crs.to_epsg()
+                ovr = src_dst.overviews(1)
                 info["overviews"] = len(ovr)
                 dst_affine, _, _ = calculate_default_transform(
-                    src_dst.dataset.crs,
+                    src_dst.crs,
                     tms.crs,
-                    src_dst.dataset.width,
-                    src_dst.dataset.height,
-                    *src_dst.dataset.bounds,
+                    width,
+                    height,
+                    *src_dst.bounds,
                 )
                 resolution = max(abs(dst_affine[0]), abs(dst_affine[4]))
                 zoom = tms.zoom_for_res(resolution)
                 ifd = [
                     {
                         "Level": 0,
-                        "Width": src_dst.dataset.width,
-                        "Height": src_dst.dataset.height,
-                        "Blocksize": src_dst.dataset.block_shapes[0],
+                        "Width": width,
+                        "Height": height,
+                        "Blocksize": src_dst.block_shapes[0],
                         "Decimation": 0,
                         "MercatorZoom": zoom,
                         "MercatorResolution": resolution,

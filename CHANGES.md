@@ -1,3 +1,7 @@
+## 0.4.1 (2022-02-14)
+
+* update Fastapi requirement
+* use WarpedVRT to get dataset bounds in epsg:4326
 
 ## 0.4.0 (2021-12-13)
 
