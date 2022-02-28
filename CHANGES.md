@@ -1,3 +1,8 @@
+## 0.5.0 (2022-02-28)
+
+* update rio-tiler requirement
+* add `reader` option
+
 ## 0.4.1 (2022-02-14)
 
 * update Fastapi requirement

@@ -8,14 +8,13 @@ with open("README.md") as f:
 inst_reqs = [
     "aiofiles",
     "fastapi>=0.73",
-    "jinja2>=2.11.2,<3.0.0",
+    "jinja2>=3.0,<4.0.0",
     "geojson-pydantic",
     "loguru",
     "rasterio",
-    "rio-tiler>=2.1,<3.1",
-    "supermercado",
+    "rio-tiler>=3.1,<4.0",
     "wurlitzer",
-    "uvicorn[standard]>=0.12.0,<0.14.0",
+    "uvicorn[standard]>=0.12.0,<0.16.0",
 ]
 extra_reqs = {
     "test": ["pytest", "pytest-cov", "pytest-asyncio"],
@@ -25,11 +24,10 @@ extra_reqs = {
 
 setup(
     name="tilebench",
-    version="0.4.1",
-    description=u"",
+    description=u"Inspect HEAD/LIST/GET requests withing Rasterio",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     keywords="",
     author=u"Vincent Sarago",
     author_email="vincent@developmentseed.org",
@@ -41,7 +39,6 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.6",
         "Topic :: Scientific/Engineering :: GIS",
     ],
     license="MIT",
@@ -50,8 +47,9 @@ setup(
     zip_safe=False,
     install_requires=inst_reqs,
     extras_require=extra_reqs,
-    entry_points="""
-      [console_scripts]
-      tilebench=tilebench.scripts.cli:cli
-      """,
+    entry_points={
+        "console_scripts": [
+            "tilebench=tilebench.scripts.cli:cli",
+        ],
+    },
 )

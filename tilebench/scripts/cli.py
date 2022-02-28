@@ -1,16 +1,20 @@
 """tilebench CLI."""
 
+import importlib
 import json
+import warnings
 from random import randint, sample
 
 import click
+import morecantile
 from loguru import logger as log
 from rasterio.rio import options
-from rio_tiler.io import COGReader
-from supermercado.burntiles import tile_extrema
+from rio_tiler.io import BaseReader, COGReader, MultiBandReader, MultiBaseReader
 
 from tilebench import profile as profiler
 from tilebench.viz import TileDebug
+
+tms = morecantile.tms.get("WebMercatorQuad")
 
 
 # The CLI command group.
@@ -37,6 +41,11 @@ def cli():
     help="Print standard outputs.",
 )
 @click.option(
+    "--reader",
+    type=str,
+    help="rio-tiler Reader (BaseReader). Default is `rio_tiler.io.COGReader`",
+)
+@click.option(
     "--config",
     "config",
     metavar="NAME=VALUE",
@@ -44,13 +53,34 @@ def cli():
     callback=options._cb_key_val,
     help="GDAL configuration options.",
 )
-def profile(input, tile, tilesize, zoom, add_kernels, add_stdout, config):
+def profile(input, tile, tilesize, zoom, add_kernels, add_stdout, reader, config):
     """Profile COGReader Mercator Tile read."""
+    if reader:
+        module, classname = reader.rsplit(".", 1)
+        reader = getattr(importlib.import_module(module), classname)  # noqa
+        if not issubclass(reader, (BaseReader, MultiBandReader, MultiBaseReader)):
+            warnings.warn(f"Invalid reader type: {type(reader)}")
+
+    Reader = reader or COGReader
+
     if not tile:
-        with COGReader(input) as cog:
+        with Reader(input, tms=tms) as cog:
             if zoom is None:
                 zoom = randint(cog.minzoom, cog.maxzoom)
-            extrema = tile_extrema(cog.bounds, zoom)
+
+            w, s, e, n = cog.geographic_bounds
+            # Truncate BBox to the TMS bounds
+            w = max(tms.bbox.left, w)
+            s = max(tms.bbox.bottom, s)
+            e = min(tms.bbox.right, e)
+            n = min(tms.bbox.top, n)
+
+            ul_tile = tms.tile(w, n, zoom)
+            lr_tile = tms.tile(e, s, zoom)
+            extrema = {
+                "x": {"min": ul_tile.x, "max": lr_tile.x + 1},
+                "y": {"min": ul_tile.y, "max": lr_tile.y + 1},
+            }
 
         tile_x = sample(range(extrema["x"]["min"], extrema["x"]["max"]), 1)[0]
         tile_y = sample(range(extrema["y"]["min"], extrema["y"]["max"]), 1)[0]
@@ -67,7 +97,7 @@ def profile(input, tile, tilesize, zoom, add_kernels, add_stdout, config):
         config=config,
     )
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-        with COGReader(src_path) as cog:
+        with Reader(src_path) as cog:
             return cog.tile(x, y, z, tilesize=tilesize)
 
     (_, _), stats = _read_tile(input, tile_x, tile_y, tile_z, tilesize)
@@ -77,21 +107,60 @@ def profile(input, tile, tilesize, zoom, add_kernels, add_stdout, config):
 
 @cli.command()
 @options.file_in_arg
-def get_zooms(input):
+@click.option(
+    "--reader",
+    type=str,
+    help="rio-tiler Reader (BaseReader). Default is `rio_tiler.io.COGReader`",
+)
+def get_zooms(input, reader):
     """Get Mercator Zoom levels."""
-    with COGReader(input) as cog:
+    if reader:
+        module, classname = reader.rsplit(".", 1)
+        reader = getattr(importlib.import_module(module), classname)  # noqa
+        if not issubclass(reader, (BaseReader, MultiBandReader, MultiBaseReader)):
+            warnings.warn(f"Invalid reader type: {type(reader)}")
+
+    Reader = reader or COGReader
+
+    with Reader(input, tms=tms) as cog:
         click.echo(json.dumps(dict(minzoom=cog.minzoom, maxzoom=cog.maxzoom)))
 
 
 @cli.command()
 @options.file_in_arg
 @click.option("--zoom", "-z", type=int)
-def random(input, zoom):
+@click.option(
+    "--reader",
+    type=str,
+    help="rio-tiler Reader (BaseReader). Default is `rio_tiler.io.COGReader`",
+)
+def random(input, zoom, reader):
     """Get random tile."""
-    with COGReader(input) as cog:
+    if reader:
+        module, classname = reader.rsplit(".", 1)
+        reader = getattr(importlib.import_module(module), classname)  # noqa
+        if not issubclass(reader, (BaseReader, MultiBandReader, MultiBaseReader)):
+            warnings.warn(f"Invalid reader type: {type(reader)}")
+
+    Reader = reader or COGReader
+
+    with Reader(input, tms=tms) as cog:
         if zoom is None:
             zoom = randint(cog.minzoom, cog.maxzoom)
-        extrema = tile_extrema(cog.bounds, zoom)
+        w, s, e, n = cog.geographic_bounds
+
+    # Truncate BBox to the TMS bounds
+    w = max(tms.bbox.left, w)
+    s = max(tms.bbox.bottom, s)
+    e = min(tms.bbox.right, e)
+    n = min(tms.bbox.top, n)
+
+    ul_tile = tms.tile(w, n, zoom)
+    lr_tile = tms.tile(e, s, zoom)
+    extrema = {
+        "x": {"min": ul_tile.x, "max": lr_tile.x + 1},
+        "y": {"min": ul_tile.y, "max": lr_tile.y + 1},
+    }
 
     x = sample(range(extrema["x"]["min"], extrema["x"]["max"]), 1)[0]
     y = sample(range(extrema["y"]["min"], extrema["y"]["max"]), 1)[0]
@@ -115,6 +184,11 @@ def random(input, zoom):
     help="Launch API without opening the rio-viz web-page.",
 )
 @click.option(
+    "--reader",
+    type=str,
+    help="rio-tiler Reader (BaseReader). Default is `rio_tiler.io.COGReader`",
+)
+@click.option(
     "--config",
     "config",
     metavar="NAME=VALUE",
@@ -122,12 +196,21 @@ def random(input, zoom):
     callback=options._cb_key_val,
     help="GDAL configuration options.",
 )
-def viz(src_path, port, host, server_only, config):
+def viz(src_path, port, host, server_only, reader, config):
     """WEB UI to visualize VSI statistics for a web mercator tile requests."""
+    if reader:
+        module, classname = reader.rsplit(".", 1)
+        reader = getattr(importlib.import_module(module), classname)  # noqa
+        if not issubclass(reader, (BaseReader)):
+            warnings.warn(f"Invalid reader type: {type(reader)}")
+
+    Reader = reader or COGReader
+
     config = config or {}
 
     application = TileDebug(
         src_path=src_path,
+        reader=Reader,
         port=port,
         host=host,
         config=config,

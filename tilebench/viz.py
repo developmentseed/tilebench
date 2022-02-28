@@ -1,7 +1,7 @@
 """Tilebench."""
 
 import pathlib
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Type
 
 import attr
 import morecantile
@@ -14,7 +14,7 @@ from rasterio.crs import CRS
 from rasterio.path import parse_path
 from rasterio.vrt import WarpedVRT
 from rasterio.warp import calculate_default_transform, transform_geom
-from rio_tiler.io import COGReader
+from rio_tiler.io import BaseReader, COGReader
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
 from starlette.templating import Jinja2Templates
@@ -61,6 +61,7 @@ class TileDebug:
     """Creates a very minimal server using fastAPI + Uvicorn."""
 
     src_path: str = attr.ib()
+    reader: Type[BaseReader] = attr.ib(default=COGReader)
 
     app: FastAPI = attr.ib(default=attr.Factory(FastAPI))
 
@@ -93,7 +94,7 @@ class TileDebug:
         def tile(response: Response, z: int, x: int, y: int):
             """Handle /tiles requests."""
             with Timer() as t:
-                with COGReader(self.src_path) as src_dst:
+                with self.reader(self.src_path) as src_dst:
                     _ = src_dst.tile(x, y, z)
             response.headers[
                 "server-timing"
@@ -118,6 +119,7 @@ class TileDebug:
 
                 with WarpedVRT(src_dst, crs="epsg:4326") as vrt:
                     geographic_bounds = list(vrt.bounds)
+
                 info["bounds"] = geographic_bounds
 
                 info["crs"] = src_dst.crs.to_epsg()
