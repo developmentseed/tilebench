@@ -7,7 +7,9 @@ from random import randint, sample
 
 import click
 import morecantile
+import rasterio
 from loguru import logger as log
+from rasterio.path import parse_path
 from rasterio.rio import options
 from rio_tiler.io import BaseReader, COGReader, MultiBandReader, MultiBaseReader
 
@@ -64,23 +66,24 @@ def profile(input, tile, tilesize, zoom, add_kernels, add_stdout, reader, config
     Reader = reader or COGReader
 
     if not tile:
-        with Reader(input, tms=tms) as cog:
-            if zoom is None:
-                zoom = randint(cog.minzoom, cog.maxzoom)
+        with rasterio.Env(CPL_VSIL_CURL_NON_CACHED=parse_path(input).as_vsi()):
+            with Reader(input, tms=tms) as cog:
+                if zoom is None:
+                    zoom = randint(cog.minzoom, cog.maxzoom)
 
-            w, s, e, n = cog.geographic_bounds
-            # Truncate BBox to the TMS bounds
-            w = max(tms.bbox.left, w)
-            s = max(tms.bbox.bottom, s)
-            e = min(tms.bbox.right, e)
-            n = min(tms.bbox.top, n)
+                w, s, e, n = cog.geographic_bounds
+                # Truncate BBox to the TMS bounds
+                w = max(tms.bbox.left, w)
+                s = max(tms.bbox.bottom, s)
+                e = min(tms.bbox.right, e)
+                n = min(tms.bbox.top, n)
 
-            ul_tile = tms.tile(w, n, zoom)
-            lr_tile = tms.tile(e, s, zoom)
-            extrema = {
-                "x": {"min": ul_tile.x, "max": lr_tile.x + 1},
-                "y": {"min": ul_tile.y, "max": lr_tile.y + 1},
-            }
+                ul_tile = tms.tile(w, n, zoom)
+                lr_tile = tms.tile(e, s, zoom)
+                extrema = {
+                    "x": {"min": ul_tile.x, "max": lr_tile.x + 1},
+                    "y": {"min": ul_tile.y, "max": lr_tile.y + 1},
+                }
 
         tile_x = sample(range(extrema["x"]["min"], extrema["x"]["max"]), 1)[0]
         tile_y = sample(range(extrema["y"]["min"], extrema["y"]["max"]), 1)[0]

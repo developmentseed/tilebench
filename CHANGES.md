@@ -1,3 +1,8 @@
+
+## 0.5.1 (2022-03-04)
+
+* make sure we don't cache previous request when using `tilebench profile` without `--tile` option
+
 ## 0.5.0 (2022-02-28)
 
 * update rio-tiler requirement

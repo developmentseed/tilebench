@@ -19,6 +19,8 @@ def test_profile():
     assert result.exit_code == 0
     log = json.loads(result.output)
     assert ["LIST", "HEAD", "GET", "Timing"] == list(log)
+    # Make sure we didn't cache any request when `--tile` is not provided
+    assert "0-" in log["GET"]["ranges"][0]
 
     result = runner.invoke(
         cli,
