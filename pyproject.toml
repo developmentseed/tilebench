@@ -55,9 +55,13 @@ name = "tilebench"
 [tool.flit.sdist]
 exclude = [
     "tests/",
-    "docs/",
     ".github/",
     "CHANGES.md",
+    "Dockerfile",
+    ".gitignore",
+    ".pre-commit-config.yaml",
+    ".flake8",
+    ".bumpversion.cfg",
 ]
 
 [tool.isort]
