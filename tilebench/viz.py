@@ -20,7 +20,8 @@ from starlette.responses import HTMLResponse, Response
 from starlette.templating import Jinja2Templates
 
 from tilebench import Timer
-from tilebench.middleware import NoCacheMiddleware, VSIStatsMiddleware
+from tilebench import profile as profiler
+from tilebench.middleware import NoCacheMiddleware
 from tilebench.resources.responses import GeoJSONResponse
 
 template_dir = str(pathlib.Path(__file__).parent.joinpath("templates"))
@@ -82,9 +83,6 @@ class TileDebug:
         self.register_routes()
         self.app.include_router(self.router)
         self.app.mount("/static", StaticFiles(directory=static_dir), name="static")
-        self.app.add_middleware(
-            VSIStatsMiddleware, config=self.config, exclude_paths=["/info.geojson"]
-        )
         self.app.add_middleware(NoCacheMiddleware)
 
     def register_routes(self):
@@ -93,9 +91,31 @@ class TileDebug:
         @self.router.get(r"/tiles/{z}/{x}/{y}")
         def tile(response: Response, z: int, x: int, y: int):
             """Handle /tiles requests."""
+
+            @profiler(
+                kernels=False,
+                quiet=True,
+                add_to_return=True,
+                raw=False,
+                config=self.config,
+            )
+            def _read_tile(src_path: str, x: int, y: int, z: int):
+                with self.reader(src_path) as src_dst:
+                    return src_dst.tile(x, y, z)
+
             with Timer() as t:
-                with self.reader(self.src_path) as src_dst:
-                    _ = src_dst.tile(x, y, z)
+                (_, _), stats = _read_tile(self.src_path, x, y, z)
+
+            head_results = "head;count={count}".format(**stats["HEAD"])
+            list_results = "list;count={count}".format(**stats["LIST"])
+            get_results = "get;count={count};size={bytes}".format(**stats["GET"])
+            ranges_results = "ranges; values={}".format(
+                "|".join(stats["GET"]["ranges"])
+            )
+            response.headers[
+                "VSI-Stats"
+            ] = f"{list_results}, {head_results}, {get_results}, {ranges_results}"
+
             response.headers[
                 "server-timing"
             ] = f"dataread; dur={round(t.elapsed * 1000, 2)}"

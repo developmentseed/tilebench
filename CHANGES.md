@@ -1,4 +1,8 @@
 
+## 0.6.1 (2022-04-19)
+
+* Remove usage of `VSIStatsMiddleware` in `tilebench viz`
+
 ## 0.6.0 (2022-04-19)
 
 * switch to pyproject.toml
