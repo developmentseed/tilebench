@@ -1,4 +1,8 @@
 
+## 0.6.0 (2022-04-19)
+
+* switch to pyproject.toml
+
 ## 0.5.1 (2022-03-04)
 
 * make sure we don't cache previous request when using `tilebench profile` without `--tile` option
