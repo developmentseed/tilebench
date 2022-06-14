@@ -48,13 +48,22 @@ def test_profile():
     log = json.loads(result.output)
     assert ["LIST", "HEAD", "GET", "Timing"] == list(log)
 
-    result = runner.invoke(cli, ["profile", COG_PATH, "--add-kernels", "--add-stdout"])
+    result = runner.invoke(
+        cli, ["profile", COG_PATH, "--add-kernels", "--add-stdout", "--add-cprofile"]
+    )
     assert not result.exception
     assert result.exit_code == 0
     log = json.loads(result.output)
-    assert ["LIST", "HEAD", "GET", "WarpKernels", "Timing", "curl", "rasterio"] == list(
-        log
-    )
+    assert [
+        "LIST",
+        "HEAD",
+        "GET",
+        "WarpKernels",
+        "Timing",
+        "cprofile",
+        "curl",
+        "rasterio",
+    ] == list(log)
 
 
 def test_get_zoom():

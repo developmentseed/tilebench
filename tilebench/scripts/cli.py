@@ -43,6 +43,12 @@ def cli():
     help="Print standard outputs.",
 )
 @click.option(
+    "--add-cprofile",
+    is_flag=True,
+    default=False,
+    help="Print cProfile stats.",
+)
+@click.option(
     "--reader",
     type=str,
     help="rio-tiler Reader (BaseReader). Default is `rio_tiler.io.COGReader`",
@@ -55,7 +61,9 @@ def cli():
     callback=options._cb_key_val,
     help="GDAL configuration options.",
 )
-def profile(input, tile, tilesize, zoom, add_kernels, add_stdout, reader, config):
+def profile(
+    input, tile, tilesize, zoom, add_kernels, add_stdout, add_cprofile, reader, config
+):
     """Profile COGReader Mercator Tile read."""
     if reader:
         module, classname = reader.rsplit(".", 1)
@@ -97,6 +105,7 @@ def profile(input, tile, tilesize, zoom, add_kernels, add_stdout, reader, config
         quiet=True,
         add_to_return=True,
         raw=add_stdout,
+        cprofile=add_cprofile,
         config=config,
     )
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):

@@ -1,4 +1,8 @@
 
+## 0.7.0 (2022-06-14)
+
+* add `cProfile` stats
+
 ## 0.6.1 (2022-04-19)
 
 * Remove usage of `VSIStatsMiddleware` in `tilebench viz`

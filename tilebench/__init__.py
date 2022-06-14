@@ -2,8 +2,10 @@
 
 __version__ = "0.6.1"
 
+import cProfile
 import json
 import logging
+import pstats
 import sys
 import time
 from io import StringIO
@@ -66,6 +68,7 @@ def profile(
     add_to_return: bool = False,
     quiet: bool = False,
     raw: bool = False,
+    cprofile: bool = False,
     config: Optional[Dict] = None,
 ):
     """Profiling."""
@@ -87,16 +90,27 @@ def profile(
             with pipes() as (_, curl_stream):
                 with rasterio.Env(**gdal_config):
                     with Timer() as t:
-                        retval = func(*args, **kwargs)
+                        prof = cProfile.Profile()
+                        retval = prof.runcall(func, *args, **kwargs)
+                        profile_stream = StringIO()
+                        ps = pstats.Stats(prof, stream=profile_stream)
+                        ps.strip_dirs().sort_stats("time", "ncalls").print_stats()
 
             logger.removeHandler(handler)
             handler.close()
 
             rio_lines = rio_stream.getvalue().splitlines()
             curl_lines = curl_stream.read().splitlines()
+            profile_lines = [p for p in profile_stream.getvalue().splitlines() if p]
 
             results = analyse_logs(rio_lines, curl_lines)
             results["Timing"] = t.elapsed
+
+            if cprofile:
+                stats_to_print = [
+                    p for p in profile_lines[3:] if float(p.split()[1]) > 0.0
+                ]
+                results["cprofile"] = [profile_lines[2], *stats_to_print]
 
             if not kernels:
                 results.pop("WarpKernels")
