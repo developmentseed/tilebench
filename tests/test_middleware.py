@@ -1,12 +1,12 @@
 """Tests for tilebench."""
 
 from fastapi import FastAPI
-from rio_tiler.io import COGReader
+from rio_tiler.io import Reader
 from starlette.testclient import TestClient
 
 from tilebench.middleware import NoCacheMiddleware, VSIStatsMiddleware
 
-COG_PATH = "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif"
+COG_PATH = "https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif"
 
 
 def test_middleware():
@@ -18,15 +18,15 @@ def test_middleware():
     @app.get("/info")
     def head():
         """Get info."""
-        with COGReader(COG_PATH) as cog:
+        with Reader(COG_PATH) as cog:
             cog.info()
             return "I got info"
 
     @app.get("/tile")
     def tile():
         """Read tile."""
-        with COGReader(COG_PATH) as cog:
-            cog.tile(2314, 1667, 12)
+        with Reader(COG_PATH) as cog:
+            cog.tile(36460, 52866, 17)
             return "I got tile"
 
     @app.get("/skip")
