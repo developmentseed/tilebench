@@ -119,7 +119,8 @@ jobs:
         if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v2
         with:
-          platforms: linux/amd64,linux/arm64
+          # See https://github.com/developmentseed/titiler/discussions/387
+          platforms: linux/amd64
           context: .
           file: Dockerfile
           push: true
@@ -131,7 +132,8 @@ jobs:
         if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'
         uses: docker/build-push-action@v2
         with:
-          platforms: linux/amd64,linux/arm64
+          # See https://github.com/developmentseed/titiler/discussions/387
+          platforms: linux/amd64
           context: .
           file: Dockerfile
           push: true
