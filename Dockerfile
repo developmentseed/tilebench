@@ -1,6 +1,8 @@
 ARG PYTHON_VERSION=3.10
 
-FROM python:${PYTHON_VERSION}-slim
+FROM bitnami/python:${PYTHON_VERSION}
+RUN apt update && apt upgrade -y \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update
 
