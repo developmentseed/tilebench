@@ -11,7 +11,7 @@
       <img src="https://github.com/developmentseed/tilebench/workflows/CI/badge.svg" alt="Test">
   </a>
   <a href="https://codecov.io/gh/developmentseed/tilebench" target="_blank">
-      <img src="https://codecov.io/gh/developmentseed/tilebench/branch/master/graph/badge.svg" alt="Coverage">
+      <img src="https://codecov.io/gh/developmentseed/tilebench/branch/main/graph/badge.svg" alt="Coverage">
   </a>
   <a href="https://pypi.org/project/tilebench" target="_blank">
       <img src="https://img.shields.io/pypi/v/tilebench?color=%2334D058&label=pypi%20package" alt="Package version">
@@ -19,7 +19,7 @@
   <a href="https://pypistats.org/packages/tilebench" target="_blank">
       <img src="https://img.shields.io/pypi/dm/tilebench.svg" alt="Downloads">
   </a>
-  <a href="https://github.com/developmentseed/tilebench/blob/master/LICENSE" target="_blank">
+  <a href="https://github.com/developmentseed/tilebench/blob/main/LICENSE" target="_blank">
       <img src="https://img.shields.io/github/license/developmentseed/tilebench.svg" alt="Downloads">
   </a>
 </p>
@@ -257,7 +257,7 @@ $ git push origin
 
 ## License
 
-See [LICENSE](https://github.com//developmentseed/tilebench/blob/master/LICENSE)
+See [LICENSE](https://github.com//developmentseed/tilebench/blob/main/LICENSE)
 
 ## Authors
 
@@ -265,4 +265,4 @@ See [contributors](https://github.com/developmentseed/tilebench/graphs/contribut
 
 ## Changes
 
-See [CHANGES.md](https://github.com/developmentseed/tilebench/blob/master/CHANGES.md).
+See [CHANGES.md](https://github.com/developmentseed/tilebench/blob/main/CHANGES.md).
