@@ -5,16 +5,18 @@ from typing import Dict, Optional, Tuple, Type
 
 import attr
 import morecantile
+import numpy
 import rasterio
 import uvicorn
 from fastapi import APIRouter, FastAPI, Query
 from fastapi.staticfiles import StaticFiles
 from geojson_pydantic.features import Feature, FeatureCollection
+from rasterio._path import _parse_path as parse_path
 from rasterio.crs import CRS
-from rasterio.path import parse_path
 from rasterio.vrt import WarpedVRT
 from rasterio.warp import calculate_default_transform, transform_geom
-from rio_tiler.io import BaseReader, COGReader
+from rio_tiler.io import BaseReader, Reader
+from rio_tiler.utils import render
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
 from starlette.templating import Jinja2Templates
@@ -22,7 +24,7 @@ from starlette.templating import Jinja2Templates
 from tilebench import Timer
 from tilebench import profile as profiler
 from tilebench.middleware import NoCacheMiddleware
-from tilebench.resources.responses import GeoJSONResponse
+from tilebench.resources.responses import GeoJSONResponse, PNGResponse
 
 template_dir = str(pathlib.Path(__file__).parent.joinpath("templates"))
 static_dir = str(pathlib.Path(__file__).parent.joinpath("static"))
@@ -62,7 +64,7 @@ class TileDebug:
     """Creates a very minimal server using fastAPI + Uvicorn."""
 
     src_path: str = attr.ib()
-    reader: Type[BaseReader] = attr.ib(default=COGReader)
+    reader: Type[BaseReader] = attr.ib(default=Reader)
 
     app: FastAPI = attr.ib(default=attr.Factory(FastAPI))
 
@@ -87,6 +89,20 @@ class TileDebug:
 
     def register_routes(self):
         """Register routes to the FastAPI app."""
+
+        @self.router.get(r"/tiles/{z}/{x}/{y}.png", response_class=PNGResponse)
+        def image(response: Response, z: int, x: int, y: int):
+            """Handle /image requests."""
+            with self.reader(self.src_path) as src_dst:
+                img = src_dst.tile(x, y, z)
+            return PNGResponse(
+                render(
+                    numpy.zeros((1, 256, 256), dtype="uint8"),
+                    img.mask,
+                    img_format="PNG",
+                    zlevel=6,
+                )
+            )
 
         @self.router.get(r"/tiles/{z}/{x}/{y}")
         def tile(response: Response, z: int, x: int, y: int):
@@ -191,6 +207,9 @@ class TileDebug:
                     )
                 info["ifd"] = ifd
 
+            info["maxzoom"] = info["ifd"][0]["MercatorZoom"]
+            info["minzoom"] = info["ifd"][-1]["MercatorZoom"]
+
             return bbox_to_feature(info["bounds"], properties=info)
 
         @self.router.get(
@@ -232,6 +251,9 @@ class TileDebug:
                     "grid_endpoint": request.url_for("grid"),
                     "tile_endpoint": request.url_for(
                         "tile", z="${z}", x="${x}", y="${y}"
+                    ),
+                    "image_endpoint": request.url_for(
+                        "image", z="{z}", x="{x}", y="{y}"
                     ),
                 },
                 media_type="text/html",

@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.9
+ARG PYTHON_VERSION=3.10
 
 FROM python:${PYTHON_VERSION}-slim
 
@@ -8,7 +8,7 @@ COPY tilebench tilebench
 COPY pyproject.toml pyproject.toml
 COPY README.md README.md
 
-RUN pip install . rasterio>=1.3a3 --no-cache-dir --upgrade
+RUN pip install . --no-cache-dir --upgrade
 
 ENV GDAL_INGESTED_BYTES_AT_OPEN 32768
 ENV GDAL_DISABLE_READDIR_ON_OPEN EMPTY_DIR

@@ -9,7 +9,7 @@ import click
 import morecantile
 import rasterio
 from loguru import logger as log
-from rasterio.path import parse_path
+from rasterio._path import _parse_path as parse_path
 from rasterio.rio import options
 from rio_tiler.io import BaseReader, COGReader, MultiBandReader, MultiBaseReader
 

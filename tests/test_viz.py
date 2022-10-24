@@ -5,7 +5,7 @@ from starlette.testclient import TestClient
 
 from tilebench.viz import TileDebug
 
-COG_PATH = "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif"
+COG_PATH = "https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif"
 
 
 def test_viz():
@@ -20,7 +20,7 @@ def test_viz():
 
     client = TestClient(app.app)
 
-    response = client.get("/tiles/12/2314/1667")
+    response = client.get("/tiles/17/36460/52866")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/json"
     assert response.headers["Cache-Control"] == "no-cache"

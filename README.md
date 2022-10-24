@@ -64,28 +64,28 @@ def info(src_path: str):
     with rasterio.open(src_path) as src_dst:
         return src_dst.meta
 
-meta = info("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif")
+meta = info("https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif")
 
-> 2020-07-13T16:59:05.685976-0400 | TILEBENCH | {"LIST": {"count": 0}, "HEAD": {"count": 1}, "GET": {"count": 1, "bytes": 16384, "ranges": ["0-16383"]}, "Timing": 0.8030309677124023}
+> 2022-10-25T00:20:24.215385+0200 | TILEBENCH | {"LIST": {"count": 0}, "HEAD": {"count": 1}, "GET": {"count": 1, "bytes": 32768, "ranges": ["0-32767"]}, "Timing": 0.8705799579620361}
 ```
 
 ```python
 from tilebench import profile
-from rio_tiler.io import COGReader
+from rio_tiler.io import Reader
 
 @profile()
 def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-    with COGReader(src_path) as cog:
+    with Reader(src_path) as cog:
         return cog.tile(x, y, z, tilesize=tilesize)
 
-data, mask = _read_tile(
-    "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif",
-    2314,
-    1667,
-    12,
+img = _read_tile(
+    "https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif",
+    9114,
+    13216,
+    15,
 )
 
-> 2020-07-13T16:59:42.654071-0400 | TILEBENCH | {"LIST": {"count": 0}, "HEAD": {"count": 1}, "GET": {"count": 3, "bytes": 1464479, "ranges": ["0-16383", "33328080-34028784", "36669144-37416533"]}, "Timing": 3.007672071456909}
+> 2022-10-25T00:21:32.895752+0200 | TILEBENCH | {"LIST": {"count": 0}, "HEAD": {"count": 1}, "GET": {"count": 2, "bytes": 409600, "ranges": ["0-32767", "32768-409599"]}, "Timing": 1.2970409393310547}
 ```
 
 ## Command Line Interface (CLI)
@@ -108,16 +108,16 @@ Commands:
 
 #### Examples
 ```
-$ tilebench get-zooms https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif | jq
+$ tilebench get-zooms https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif | jq
 {
-  "minzoom": 7,
-  "maxzoom": 12
+  "minzoom": 14,
+  "maxzoom": 19
 }
 
-$ tilebench random https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif --zoom 12
-12-2314-1667
+$ tilebench random https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif --zoom 15
+15-9114-13215
 
-$ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif --tile 12-2314-1667 --config GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR | jq
+$ tilebench profile https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif --tile 15-9114-13215 --config GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR | jq
 {
   "LIST": {
     "count": 0
@@ -126,18 +126,17 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
     "count": 1
   },
   "GET": {
-    "count": 3,
-    "bytes": 1464479,
+    "count": 2,
+    "bytes": 409600,
     "ranges": [
-      "0-16383",
-      "33328080-34028784",
-      "36669144-37416533"
+      "0-32767",
+      "32768-409599"
     ]
   },
-  "Timing": 2.377608060836792
+  "Timing": 1.2364399433135986
 }
 
-$ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif --tile 12-2314-1667 --config GDAL_DISABLE_READDIR_ON_OPEN=FALSE | jq
+$ tilebench profile https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif --tile 15-9114-13215 --config GDAL_DISABLE_READDIR_ON_OPEN=FALSE | jq
 {
   "LIST": {
     "count": 1
@@ -146,15 +145,14 @@ $ tilebench profile https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2
     "count": 8
   },
   "GET": {
-    "count": 11,
-    "bytes": 1464479,
+    "count": 3,
+    "bytes": 409600,
     "ranges": [
-      "0-16383",
-      "33328080-34028784",
-      "36669144-37416533"
+      "0-32767",
+      "32768-409599"
     ]
   },
-  "Timing": 7.09281587600708
+  "Timing": 2.2018940448760986
 }
 ```
 
@@ -201,7 +199,7 @@ See the full list at https://gdal.org/user/configoptions.html
 ## Internal tiles Vs Mercator grid
 
 ```
-$ tilebench viz https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif --config GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR
+$ tilebench viz https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif --config GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR
 ```
 
 ![](https://user-images.githubusercontent.com/10407788/103528918-17180880-4e85-11eb-91b3-d60659b15e80.png)

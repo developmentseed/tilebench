@@ -1,4 +1,12 @@
 
+## 0.8.0 (2022-10-25)
+
+* update rio-tiler/rasterio dependencies
+* remove python 3.7 support
+* add python 3.10 support
+* add image endpoint to show the data footprint
+* switch from mapbox to maplibre
+
 ## 0.7.0 (2022-06-14)
 
 * add `cProfile` stats

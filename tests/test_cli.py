@@ -7,7 +7,7 @@ from click.testing import CliRunner
 
 from tilebench.scripts.cli import cli
 
-COG_PATH = "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/2020/S2A_34SGA_20200318_0_L2A/B05.tif"
+COG_PATH = "https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif"
 
 
 def test_profile():
@@ -32,7 +32,7 @@ def test_profile():
             "--zoom",
             11,
             "--reader",
-            "rio_tiler.io.COGReader",
+            "rio_tiler.io.Reader",
         ],
     )
     assert not result.exception
@@ -41,7 +41,7 @@ def test_profile():
     assert ["LIST", "HEAD", "GET", "Timing"] == list(log)
 
     result = runner.invoke(
-        cli, ["profile", COG_PATH, "--tilesize", 512, "--tile", "11-1159-829"]
+        cli, ["profile", COG_PATH, "--tilesize", 512, "--tile", "16-18229-26433"]
     )
     assert not result.exception
     assert result.exit_code == 0
@@ -77,7 +77,7 @@ def test_get_zoom():
     assert ["minzoom", "maxzoom"] == list(log)
 
     result = runner.invoke(
-        cli, ["get-zooms", COG_PATH, "--reader", "rio_tiler.io.COGReader"]
+        cli, ["get-zooms", COG_PATH, "--reader", "rio_tiler.io.Reader"]
     )
     assert not result.exception
     assert result.exit_code == 0
@@ -95,11 +95,11 @@ def test_random():
     assert "-" in result.output
 
     result = runner.invoke(
-        cli, ["random", COG_PATH, "--zoom", 11, "--reader", "rio_tiler.io.COGReader"]
+        cli, ["random", COG_PATH, "--zoom", 14, "--reader", "rio_tiler.io.Reader"]
     )
     assert not result.exception
     assert result.exit_code == 0
-    assert "11-" in result.output
+    assert "14-" in result.output
 
 
 @patch("click.launch")
@@ -115,8 +115,8 @@ def test_viz(launch):
     assert "-" in result.output
 
     result = runner.invoke(
-        cli, ["random", COG_PATH, "--zoom", 11, "--reader", "rio_tiler.io.COGReader"]
+        cli, ["random", COG_PATH, "--zoom", 14, "--reader", "rio_tiler.io.Reader"]
     )
     assert not result.exception
     assert result.exit_code == 0
-    assert "11-" in result.output
+    assert "14-" in result.output
