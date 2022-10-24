@@ -7,6 +7,7 @@ RUN apt-get update
 COPY tilebench tilebench
 COPY pyproject.toml pyproject.toml
 COPY README.md README.md
+COPY CHANGES.md CHANGES.md
 
 RUN pip install . --no-cache-dir --upgrade
 
