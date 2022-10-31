@@ -1,4 +1,9 @@
 
+## 0.8.1 (2022-10-31)
+
+* fix issue with min/max zoom when there is no overviews
+* calculate windows from block_shapes
+
 ## 0.8.0 (2022-10-25)
 
 * update rio-tiler/rasterio dependencies

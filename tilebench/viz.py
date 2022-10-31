@@ -1,5 +1,6 @@
 """Tilebench."""
 
+import math
 import pathlib
 from typing import Dict, Optional, Tuple, Type
 
@@ -11,6 +12,7 @@ import uvicorn
 from fastapi import APIRouter, FastAPI, Query
 from fastapi.staticfiles import StaticFiles
 from geojson_pydantic.features import Feature, FeatureCollection
+from rasterio import windows
 from rasterio._path import _parse_path as parse_path
 from rasterio.crs import CRS
 from rasterio.vrt import WarpedVRT
@@ -57,6 +59,22 @@ def bbox_to_feature(
             "type": "Feature",
         }
     )
+
+
+def dims(total: int, chop: int):
+    """Given a total number of pixels, chop into equal chunks.
+
+    yeilds (offset, size) tuples
+    >>> list(dims(512, 256))
+    [(0, 256), (256, 256)]
+    >>> list(dims(502, 256))
+    [(0, 256), (256, 246)]
+    >>> list(dims(522, 256))
+    [(0, 256), (256, 256), (512, 10)]
+    """
+    for a in range(int(math.ceil(total / chop))):
+        offset = a * chop
+        yield offset, chop
 
 
 @attr.s
@@ -170,6 +188,8 @@ class TileDebug:
                 )
                 resolution = max(abs(dst_affine[0]), abs(dst_affine[4]))
                 zoom = tms.zoom_for_res(resolution)
+                info["maxzoom"] = zoom
+
                 ifd = [
                     {
                         "Level": 0,
@@ -205,10 +225,9 @@ class TileDebug:
                             "MercatorResolution": resolution,
                         }
                     )
-                info["ifd"] = ifd
 
-            info["maxzoom"] = info["ifd"][0]["MercatorZoom"]
-            info["minzoom"] = info["ifd"][-1]["MercatorZoom"]
+            info["ifd"] = ifd
+            info["minzoom"] = zoom  # either the same has maxzoom or last IFD
 
             return bbox_to_feature(info["bounds"], properties=info)
 
@@ -223,16 +242,25 @@ class TileDebug:
             options = {"OVERVIEW_LEVEL": ovr_level - 1} if ovr_level else {}
             with rasterio.open(self.src_path, **options) as src_dst:
                 feats = []
-                for _, window in list(src_dst.block_windows(1)):
-                    geom = bbox_to_feature(src_dst.window_bounds(window))
-                    geom = transform_geom(
-                        src_dst.crs,
-                        WGS84_CRS,
-                        geom.geometry.dict(),
-                    )
+                blockxsize, blockysize = src_dst.block_shapes[0]
+                winds = (
+                    windows.Window(col_off=col_off, row_off=row_off, width=w, height=h)
+                    for row_off, h in dims(src_dst.height, blockysize)
+                    for col_off, w in dims(src_dst.width, blockxsize)
+                )
+                for window in winds:
+                    geom = bbox_to_feature(
+                        windows.bounds(window, src_dst.transform)
+                    ).geometry.dict()
+                    geom = transform_geom(src_dst.crs, WGS84_CRS, geom)
                     feats.append(
-                        {"type": "Feature", "geometry": geom, "properties": {}}
+                        {
+                            "type": "Feature",
+                            "geometry": geom,
+                            "properties": {"window": str(window)},
+                        }
                     )
+
             grids = {"type": "FeatureCollection", "features": feats}
             return grids
 
