@@ -1,4 +1,8 @@
 
+## 0.8.2 (2022-11-21)
+
+* update hatch config
+
 ## 0.8.1 (2022-10-31)
 
 * fix issue with min/max zoom when there is no overviews

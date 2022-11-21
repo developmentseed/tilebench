@@ -71,6 +71,13 @@ path = "tilebench/__init__.py"
 exclude = [
   "/tests",
   "Dockerfile",
+  ".pytest_cache",
+  ".history",
+  ".github",
+  ".bumpversion.cfg",
+  ".flake8",
+  ".gitignore",
+  ".pre-commit-config.yaml",
 ]
 
 [build-system]
