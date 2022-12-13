@@ -4,7 +4,7 @@
   <img src="https://user-images.githubusercontent.com/10407788/145784365-7ce635d1-3971-4a94-856f-cd8b081f10c1.png" style="max-width: 800px;" alt="tilebench"></a>
 </p>
 <p align="center">
-  <em>Inspect HEAD/LIST/GET requests withing Rasterio</em>
+  <em>Inspect HEAD/LIST/GET requests within Rasterio</em>
 </p>
 <p align="center">
   <a href="https://github.com/developmentseed/tilebench/actions?query=workflow%3ACI" target="_blank">
