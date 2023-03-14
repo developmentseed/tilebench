@@ -5,12 +5,13 @@ from io import StringIO
 from typing import Dict, List, Optional
 
 import rasterio
+from starlette.datastructures import MutableHeaders
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.types import ASGIApp
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from wurlitzer import pipes
 
-from tilebench import analyse_logs
+from tilebench import parse_logs
 
 
 class VSIStatsMiddleware(BaseHTTPMiddleware):
@@ -51,7 +52,7 @@ class VSIStatsMiddleware(BaseHTTPMiddleware):
             rio_lines = rio_stream.getvalue().splitlines()
             curl_lines = curl_stream.read().splitlines()
 
-            results = analyse_logs(rio_lines, curl_lines)
+            results = parse_logs(rio_lines, curl_lines)
             head_results = "head;count={count}".format(**results["HEAD"])
             list_results = "list;count={count}".format(**results["LIST"])
             get_results = "get;count={count};size={bytes}".format(**results["GET"])
@@ -65,16 +66,31 @@ class VSIStatsMiddleware(BaseHTTPMiddleware):
         return response
 
 
-class NoCacheMiddleware(BaseHTTPMiddleware):
+class NoCacheMiddleware:
     """MiddleWare to add CacheControl in response headers."""
 
-    async def dispatch(self, request: Request, call_next):
-        """Add cache-control."""
-        response = await call_next(request)
-        if (
-            not response.headers.get("Cache-Control")
-            and request.method in ["HEAD", "GET"]
-            and response.status_code < 500
-        ):
-            response.headers["Cache-Control"] = "no-cache"
-        return response
+    def __init__(self, app: ASGIApp) -> None:
+        """Init Middleware."""
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        """Handle call."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def send_wrapper(message: Message):
+            """Send Message."""
+            if message["type"] == "http.response.start":
+                response_headers = MutableHeaders(scope=message)
+
+                if (
+                    not response_headers.get("Cache-Control")
+                    and scope["method"] in ["HEAD", "GET"]
+                    and message["status"] < 500
+                ):
+                    response_headers["Cache-Control"] = "no-cache"
+
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)

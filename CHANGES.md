@@ -1,4 +1,11 @@
 
+## 0.9.0 (2023-03-14)
+
+* update pre-commit and fix issue with starlette>=0.26
+* re-write `NoCacheMiddleware` as pure ASGI middleware
+* rename `analyse_logs` to `parse_logs`
+* add python 3.11 support
+
 ## 0.8.2 (2022-11-21)
 
 * update hatch config
