@@ -275,13 +275,13 @@ class TileDebug:
                 name="index.html",
                 context={
                     "request": request,
-                    "geojson_endpoint": request.url_for("info"),
-                    "grid_endpoint": request.url_for("grid"),
-                    "tile_endpoint": request.url_for(
-                        "tile", z="${z}", x="${x}", y="${y}"
+                    "geojson_endpoint": str(request.url_for("info")),
+                    "grid_endpoint": str(request.url_for("grid")),
+                    "tile_endpoint": str(
+                        request.url_for("tile", z="${z}", x="${x}", y="${y}")
                     ),
-                    "image_endpoint": request.url_for(
-                        "image", z="{z}", x="{x}", y="{y}"
+                    "image_endpoint": str(
+                        request.url_for("image", z="{z}", x="{x}", y="{y}")
                     ),
                 },
                 media_type="text/html",

@@ -20,8 +20,8 @@ log.remove()
 log.add(sys.stderr, format=fmt)
 
 
-def analyse_logs(rio_lines: List[str], curl_lines: List[str]) -> Dict[str, Any]:
-    """Analyse Rasterio and CURL logs."""
+def parse_logs(rio_lines: List[str], curl_lines: List[str]) -> Dict[str, Any]:
+    """Parse Rasterio and CURL logs."""
     # LIST
     list_requests = [line for line in rio_lines if " VSICURL: GetFileList" in line]
     list_summary = {
@@ -103,7 +103,7 @@ def profile(
             curl_lines = curl_stream.read().splitlines()
             profile_lines = [p for p in profile_stream.getvalue().splitlines() if p]
 
-            results = analyse_logs(rio_lines, curl_lines)
+            results = parse_logs(rio_lines, curl_lines)
             results["Timing"] = t.elapsed
 
             if cprofile:
