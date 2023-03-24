@@ -108,7 +108,7 @@
     </div>
 
     <script>
-    const scope = {data: undefined}
+    const scope = {metadata: undefined}
     const merc = new SphericalMercator({ size: 256 });
 
     const info_endpoint = '{{ geojson_endpoint }}'
@@ -172,7 +172,11 @@
 
     // return a geojson of Mercator Tiles for a bbox and zoom
     var mercator_grid = (zoom) => {
-        const extrema = merc.xyz(scope.data.properties.bounds, zoom);
+        let bounds = scope.metadata.bounds
+        if (bounds[0] > bounds[2]) {
+            bounds[0] = bounds[0] - 360
+        }
+        const extrema = merc.xyz(bounds, zoom);
 
         const featCollection = {
             'type': 'FeatureCollection',
@@ -240,7 +244,7 @@
                 throw new Error('Network response was not ok.');
             })
             .then(data => {
-                scope.data = data
+                scope.metadata = data.features[0].properties
 
                 map.addSource('aoi', {
                     'type': 'geojson',
@@ -261,35 +265,67 @@
                     }
                 })
 
-                const bounds = data.properties.bounds
-                const ll = truncate_lnglat(bounds[0], bounds[1])
-                const ur = truncate_lnglat(bounds[2], bounds[3])
-                map.fitBounds([ll, ur])
+                let crossing_dateline = false
+                let bounds = [...scope.metadata.bounds]
+                // Bounds crossing dateline
+                if (bounds[0] > bounds[2]) {
+                    crossing_dateline = true
+                    bounds[0] = bounds[0] - 360
+                }
+                map.fitBounds(
+                    [[bounds[0], bounds[1]], [bounds[2], bounds[3]]]
+                )
 
-                map.addSource('raster', {
+                if (crossing_dateline) {
+                    // 2 sources and 2 layers
+                    // left
+                    map.addSource('raster-l', {
                     type: 'raster',
+                    bounds: [-180, bounds[1], bounds[2], bounds[3]],
+                    minzoom: scope.metadata.minzoom,
+                    maxzoom: scope.metadata.minzoom,
                     tiles: [image_endpoint],
-                    tileSize: 256,
-                    bounds: data.properties.bounds,
-                    minzoom: data.properties.minzoom,
-                    maxzoom: data.properties.minzoom  // THIS IS ON PURPOSE, We don't really need high resolution tiles
-                })
-                map.addLayer({id: 'raster', type: 'raster', source: 'raster', paint: {'raster-opacity': 0.6}})
+                    tileSize: 256 // This might be false but it's not in TileJSON
+                    })
+                    map.addLayer({id: 'raster-l', type: 'raster', source: 'raster-l', paint: {'raster-opacity': 0.6}})
+
+                    //right
+                    map.addSource('raster-r', {
+                    type: 'raster',
+                    bounds: [bounds[0], bounds[1], 180, bounds[3]],
+                    minzoom: scope.metadata.minzoom,
+                    maxzoom: scope.metadata.minzoom,
+                    tiles: [image_endpoint],
+                    tileSize: 256 // This might be false but it's not in TileJSON
+                    })
+                    map.addLayer({id: 'raster-r', type: 'raster', source: 'raster-r', paint: {'raster-opacity': 0.6}})
+
+                } else {
+                    map.addSource('raster', {
+                    type: 'raster',
+                    bounds: bounds,
+                    minzoom: scope.metadata.minzoom,
+                    maxzoom: scope.metadata.minzoom, // THIS IS ON PURPOSE, We don't really need high resolution tiles
+                    tiles: [image_endpoint],
+                    tileSize: 256 // This might be false but it's not in TileJSON
+                    })
+                    map.addLayer({id: 'raster', type: 'raster', source: 'raster', paint: {'raster-opacity': 0.6}})
+                }
 
                 const sel = document.getElementById('ovr-selector')
-                const novr = data.properties.ifd.length
+                const novr = scope.metadata.ifd.length
 
                 for (var i = 0; i < novr; i++) {
                     let l = document.createElement('option')
-                    ifd = data.properties.ifd[i]
+                    ifd = scope.metadata.ifd[i]
                     l.setAttribute('level', ifd.Level)
                     l.setAttribute('zoom', ifd.MercatorZoom)
                     l.text = `Level: ${ifd.Level} (Zoom ${ifd.MercatorZoom})`
                     sel.appendChild(l)
                     if (i === novr - 1) l.selected = "selected"
                 }
-                document.getElementById('raster-crs').innerText = `CRS: epsg:${scope.data.properties["crs"]}`
-                document.getElementById('raster-size').innerText = `Size: ${scope.data.properties["height"]}x${scope.data.properties["width"]}`
+                document.getElementById('raster-crs').innerText = `CRS: epsg:${scope.metadata.crs}`
+                document.getElementById('raster-size').innerText = `Size: ${scope.metadata.height}x${scope.metadata.width}`
 
                 return update_viz()
             })
@@ -372,10 +408,10 @@
         const update_viz = () => {
             const level = parseInt(document.getElementById('ovr-selector').selectedOptions[0].getAttribute("level"))
             const zoom = parseInt(document.getElementById('ovr-selector').selectedOptions[0].getAttribute("zoom"))
-            add_mercator_grid(scope.data.properties.ifd[level])
-            add_tile_grid(scope.data.properties.ifd[level])
+            add_mercator_grid(scope.metadata.ifd[level])
+            add_tile_grid(scope.metadata.ifd[level])
             document.getElementById('res-gmaps').innerText = ((2 * merc.MAXEXTENT) / merc.Ac[zoom]).toFixed(4)
-            document.getElementById('res-merc').innerText = scope.data.properties.ifd[level]["MercatorResolution"].toFixed(4)
+            document.getElementById('res-merc').innerText = scope.metadata.ifd[level]["MercatorResolution"].toFixed(4)
         }
 
         document.getElementById('ovr-selector').addEventListener('change', (e) => {

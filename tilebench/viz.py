@@ -11,11 +11,9 @@ import rasterio
 import uvicorn
 from fastapi import APIRouter, FastAPI, Query
 from fastapi.staticfiles import StaticFiles
-from geojson_pydantic.features import Feature, FeatureCollection
 from rasterio import windows
 from rasterio._path import _parse_path as parse_path
 from rasterio.crs import CRS
-from rasterio.vrt import WarpedVRT
 from rasterio.warp import calculate_default_transform, transform_geom
 from rio_tiler.io import BaseReader, Reader
 from rio_tiler.utils import render
@@ -39,26 +37,68 @@ WGS84_CRS = CRS.from_epsg(4326)
 def bbox_to_feature(
     bbox: Tuple[float, float, float, float],
     properties: Optional[Dict] = None,
-) -> Feature:
+) -> Dict:
     """Create a GeoJSON feature polygon from a bounding box."""
-    return Feature(
-        **{
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [
-                    [
-                        [bbox[0], bbox[3]],
-                        [bbox[0], bbox[1]],
-                        [bbox[2], bbox[1]],
-                        [bbox[2], bbox[3]],
-                        [bbox[0], bbox[3]],
-                    ]
-                ],
+    # Dateline crossing dataset
+    if bbox[0] > bbox[2]:
+        bounds_left = [-180, bbox[1], bbox[2], bbox[3]]
+        bounds_right = [bbox[0], bbox[1], 180, bbox[3]]
+
+        features = [
+            {
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [bounds_left[0], bounds_left[3]],
+                            [bounds_left[0], bounds_left[1]],
+                            [bounds_left[2], bounds_left[1]],
+                            [bounds_left[2], bounds_left[3]],
+                            [bounds_left[0], bounds_left[3]],
+                        ]
+                    ],
+                },
+                "properties": properties or {},
+                "type": "Feature",
             },
-            "properties": {} or properties,
-            "type": "Feature",
-        }
-    )
+            {
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [bounds_right[0], bounds_right[3]],
+                            [bounds_right[0], bounds_right[1]],
+                            [bounds_right[2], bounds_right[1]],
+                            [bounds_right[2], bounds_right[3]],
+                            [bounds_right[0], bounds_right[3]],
+                        ]
+                    ],
+                },
+                "properties": properties or {},
+                "type": "Feature",
+            },
+        ]
+    else:
+        features = [
+            {
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [bbox[0], bbox[3]],
+                            [bbox[0], bbox[1]],
+                            [bbox[2], bbox[1]],
+                            [bbox[2], bbox[3]],
+                            [bbox[0], bbox[3]],
+                        ]
+                    ],
+                },
+                "properties": properties or {},
+                "type": "Feature",
+            },
+        ]
+
+    return {"type": "FeatureCollection", "features": features}
 
 
 def dims(total: int, chop: int):
@@ -157,34 +197,30 @@ class TileDebug:
 
         @self.router.get(
             r"/info.geojson",
-            response_model=Feature,
             response_model_exclude_none=True,
             response_class=GeoJSONResponse,
         )
         def info():
             """Return a geojson."""
-            with rasterio.open(self.src_path) as src_dst:
-                width, height = src_dst.width, src_dst.height
+            with Reader(self.src_path) as src_dst:
+                width, height = src_dst.dataset.width, src_dst.dataset.height
 
                 info = {
                     "width": width,
                     "height": height,
                 }
+                info["bounds"] = src_dst.geographic_bounds
 
-                with WarpedVRT(src_dst, crs="epsg:4326") as vrt:
-                    geographic_bounds = list(vrt.bounds)
+                info["crs"] = src_dst.dataset.crs.to_epsg()
 
-                info["bounds"] = geographic_bounds
-
-                info["crs"] = src_dst.crs.to_epsg()
-                ovr = src_dst.overviews(1)
+                ovr = src_dst.dataset.overviews(1)
                 info["overviews"] = len(ovr)
                 dst_affine, _, _ = calculate_default_transform(
-                    src_dst.crs,
+                    src_dst.dataset.crs,
                     tms.crs,
                     width,
                     height,
-                    *src_dst.bounds,
+                    *src_dst.dataset.bounds,
                 )
                 resolution = max(abs(dst_affine[0]), abs(dst_affine[4]))
                 zoom = tms.zoom_for_res(resolution)
@@ -195,7 +231,7 @@ class TileDebug:
                         "Level": 0,
                         "Width": width,
                         "Height": height,
-                        "Blocksize": src_dst.block_shapes[0],
+                        "Blocksize": src_dst.dataset.block_shapes[0],
                         "Decimation": 0,
                         "MercatorZoom": zoom,
                         "MercatorResolution": resolution,
@@ -233,7 +269,6 @@ class TileDebug:
 
         @self.router.get(
             r"/tiles.geojson",
-            response_model=FeatureCollection,
             response_model_exclude_none=True,
             response_class=GeoJSONResponse,
         )
@@ -249,20 +284,18 @@ class TileDebug:
                     for col_off, w in dims(src_dst.width, blockxsize)
                 )
                 for window in winds:
-                    geom = bbox_to_feature(
-                        windows.bounds(window, src_dst.transform)
-                    ).geometry.dict()
-                    geom = transform_geom(src_dst.crs, WGS84_CRS, geom)
-                    feats.append(
-                        {
-                            "type": "Feature",
-                            "geometry": geom,
-                            "properties": {"window": str(window)},
-                        }
-                    )
+                    fc = bbox_to_feature(windows.bounds(window, src_dst.transform))
+                    for feat in fc.get("features", []):
+                        geom = transform_geom(src_dst.crs, WGS84_CRS, feat["geometry"])
+                        feats.append(
+                            {
+                                "type": "Feature",
+                                "geometry": geom,
+                                "properties": {"window": str(window)},
+                            }
+                        )
 
-            grids = {"type": "FeatureCollection", "features": feats}
-            return grids
+            return {"type": "FeatureCollection", "features": feats}
 
         @self.router.get(
             "/",

@@ -1,4 +1,8 @@
 
+## 0.9.1 (2023-03-24)
+
+* handle dateline crossing dataset and remove pydantic serialization
+
 ## 0.9.0 (2023-03-14)
 
 * update pre-commit and fix issue with starlette>=0.26
