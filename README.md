@@ -186,6 +186,7 @@ app.add_middleware(VSIStatsMiddleware, exclude_paths=["/foo", "/bar"])
 
 ## GDAL config options
 
+- **CPL_TIMESTAMP**: Add timings on GDAL Logs
 - **GDAL_DISABLE_READDIR_ON_OPEN**: Allow or Disable listing of files in the directory (e.g external overview)
 - **GDAL_INGESTED_BYTES_AT_OPEN**: Control how many bytes GDAL will ingest when opening a dataset (useful when a file has a big header)
 - **CPL_VSIL_CURL_ALLOWED_EXTENSIONS**: Limit valid external files
