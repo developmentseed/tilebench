@@ -1,4 +1,9 @@
 
+## 0.10.0 (2023-06-02)
+
+* update `rio-tiler` requirement
+* fix log parsing when `CPL_TIMESTAMP=ON` is set
+
 ## 0.9.1 (2023-03-24)
 
 * handle dateline crossing dataset and remove pydantic serialization

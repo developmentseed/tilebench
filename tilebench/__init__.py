@@ -41,7 +41,10 @@ def parse_logs(rio_lines: List[str], curl_lines: List[str]) -> Dict[str, Any]:
     # Rasterio GET
     # Rasterio only log successfull requests
     get_requests = [line for line in rio_lines if ": Downloading" in line]
-    get_values = [map(int, get.split(" ")[4].split("-")) for get in get_requests]
+    get_values = [
+        map(int, get.split(" Downloading ")[1].split(" ")[0].split("-"))
+        for get in get_requests
+    ]
     get_values_str = [get.split(" ")[4] for get in get_requests]
     data_transfer = sum([j - i + 1 for i, j in get_values])
 
