@@ -1,4 +1,10 @@
 
+## 0.11.0 (2023-10-18)
+
+* update requirements
+  - `rio-tiler>=6.0,<7.0`
+  - `fastapi>=0.100.0`
+
 ## 0.10.0 (2023-06-02)
 
 * update `rio-tiler` requirement

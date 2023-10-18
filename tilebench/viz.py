@@ -9,7 +9,7 @@ import morecantile
 import numpy
 import rasterio
 import uvicorn
-from fastapi import APIRouter, FastAPI, Query
+from fastapi import APIRouter, FastAPI, Path, Query
 from fastapi.staticfiles import StaticFiles
 from rasterio import windows
 from rasterio._path import _parse_path as parse_path
@@ -20,6 +20,7 @@ from rio_tiler.utils import render
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
 from starlette.templating import Jinja2Templates
+from typing_extensions import Annotated
 
 from tilebench import Timer
 from tilebench import profile as profiler
@@ -149,10 +150,31 @@ class TileDebug:
         """Register routes to the FastAPI app."""
 
         @self.router.get(r"/tiles/{z}/{x}/{y}.png", response_class=PNGResponse)
-        def image(response: Response, z: int, x: int, y: int):
+        def image(
+            response: Response,
+            z: Annotated[
+                int,
+                Path(
+                    description="Identifier (Z) selecting one of the scales defined in the TileMatrixSet and representing the scaleDenominator the tile.",
+                ),
+            ],
+            x: Annotated[
+                int,
+                Path(
+                    description="Column (X) index of the tile on the selected TileMatrix. It cannot exceed the MatrixHeight-1 for the selected TileMatrix.",
+                ),
+            ],
+            y: Annotated[
+                int,
+                Path(
+                    description="Row (Y) index of the tile on the selected TileMatrix. It cannot exceed the MatrixWidth-1 for the selected TileMatrix.",
+                ),
+            ],
+        ):
             """Handle /image requests."""
             with self.reader(self.src_path) as src_dst:
                 img = src_dst.tile(x, y, z)
+
             return PNGResponse(
                 render(
                     numpy.zeros((1, 256, 256), dtype="uint8"),
@@ -163,7 +185,27 @@ class TileDebug:
             )
 
         @self.router.get(r"/tiles/{z}/{x}/{y}")
-        def tile(response: Response, z: int, x: int, y: int):
+        def tile(
+            response: Response,
+            z: Annotated[
+                int,
+                Path(
+                    description="Identifier (Z) selecting one of the scales defined in the TileMatrixSet and representing the scaleDenominator the tile.",
+                ),
+            ],
+            x: Annotated[
+                int,
+                Path(
+                    description="Column (X) index of the tile on the selected TileMatrix. It cannot exceed the MatrixHeight-1 for the selected TileMatrix.",
+                ),
+            ],
+            y: Annotated[
+                int,
+                Path(
+                    description="Row (Y) index of the tile on the selected TileMatrix. It cannot exceed the MatrixWidth-1 for the selected TileMatrix.",
+                ),
+            ],
+        ):
             """Handle /tiles requests."""
 
             @profiler(
@@ -272,7 +314,7 @@ class TileDebug:
             response_model_exclude_none=True,
             response_class=GeoJSONResponse,
         )
-        def grid(ovr_level: int = Query(...)):
+        def grid(ovr_level: Annotated[int, Query(description="Overview Level")]):
             """return geojson."""
             options = {"OVERVIEW_LEVEL": ovr_level - 1} if ovr_level else {}
             with rasterio.open(self.src_path, **options) as src_dst:

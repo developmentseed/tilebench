@@ -135,7 +135,7 @@ def get_zooms(input, reader):
     Reader = reader or COGReader
 
     with Reader(input, tms=tms) as cog:
-        click.echo(json.dumps(dict(minzoom=cog.minzoom, maxzoom=cog.maxzoom)))
+        click.echo(json.dumps({"minzoom": cog.minzoom, "maxzoom": cog.maxzoom}))
 
 
 @cli.command()
