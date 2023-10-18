@@ -4,6 +4,13 @@
 * update requirements
   - `rio-tiler>=6.0,<7.0`
   - `fastapi>=0.100.0`
+  - `rasterio>=1.3.8`
+
+* remove `wurlitzer` dependency
+
+* only use `rasterio` logs
+
+* remove `LIST` information **breaking change**
 
 ## 0.10.0 (2023-06-02)
 

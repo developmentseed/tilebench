@@ -41,7 +41,6 @@ def test_middleware():
     assert response.headers["Cache-Control"] == "no-cache"
     assert response.headers["VSI-Stats"]
     stats = response.headers["VSI-Stats"]
-    assert "list;count=" in stats
     assert "head;count=" in stats
     assert "get;count=" in stats
 
@@ -50,7 +49,6 @@ def test_middleware():
     assert response.headers["content-type"] == "application/json"
     assert response.headers["VSI-Stats"]
     stats = response.headers["VSI-Stats"]
-    assert "list;count=" in stats
     assert "head;count=" in stats
     assert "get;count=" in stats
 

@@ -31,7 +31,7 @@
 ---
 
 
-Inspect HEAD/LIST/GET requests withing Rasterio.
+Inspect HEAD/GET requests withing Rasterio.
 
 Note: In GDAL 3.2, logging capabilities for /vsicurl, /vsis3 and the like was added (ref: https://github.com/OSGeo/gdal/pull/2742).
 
@@ -66,7 +66,7 @@ def info(src_path: str):
 
 meta = info("https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif")
 
-> 2022-10-25T00:20:24.215385+0200 | TILEBENCH | {"LIST": {"count": 0}, "HEAD": {"count": 1}, "GET": {"count": 1, "bytes": 32768, "ranges": ["0-32767"]}, "Timing": 0.8705799579620361}
+> 2023-10-18T23:00:11.184745+0200 | TILEBENCH | {"HEAD": {"count": 1}, "GET": {"count": 1, "bytes": 32768, "ranges": ["0-32767"]}, "Timing": 0.7379939556121826}
 ```
 
 ```python
@@ -85,7 +85,7 @@ img = _read_tile(
     15,
 )
 
-> 2022-10-25T00:21:32.895752+0200 | TILEBENCH | {"LIST": {"count": 0}, "HEAD": {"count": 1}, "GET": {"count": 2, "bytes": 409600, "ranges": ["0-32767", "32768-409599"]}, "Timing": 1.2970409393310547}
+> 2023-10-18T23:01:00.572263+0200 | TILEBENCH | {"HEAD": {"count": 1}, "GET": {"count": 2, "bytes": 409600, "ranges": ["0-32767", "32768-409599"]}, "Timing": 1.0749869346618652}
 ```
 
 ## Command Line Interface (CLI)
@@ -119,9 +119,6 @@ $ tilebench random https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/2022
 
 $ tilebench profile https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif --tile 15-9114-13215 --config GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR | jq
 {
-  "LIST": {
-    "count": 0
-  },
   "HEAD": {
     "count": 1
   },
@@ -133,14 +130,11 @@ $ tilebench profile https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/202
       "32768-409599"
     ]
   },
-  "Timing": 1.2364399433135986
+  "Timing": 0.9715230464935303
 }
 
 $ tilebench profile https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif --tile 15-9114-13215 --config GDAL_DISABLE_READDIR_ON_OPEN=FALSE | jq
 {
-  "LIST": {
-    "count": 1
-  },
   "HEAD": {
     "count": 8
   },
@@ -152,7 +146,7 @@ $ tilebench profile https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/202
       "32768-409599"
     ]
   },
-  "Timing": 2.2018940448760986
+  "Timing": 2.1837549209594727
 }
 ```
 
@@ -227,34 +221,7 @@ docker run \
 
 ## Contribution & Development
 
-Issues and pull requests are more than welcome.
-
-**dev install**
-
-```bash
-$ git clone https://github.com/developmentseed/tilebench.git
-$ cd tilebench
-$ pip install -e .[dev]
-```
-
-**pre-commit**
-
-This repo is set to use `pre-commit` to run *isort*, *flake8*, *pydocstring*, *black* ("uncompromising Python code formatter") and mypy when committing new code.
-
-```
-$ pre-commit install
-
-$ git add .
-
-$ git commit -m'my change'
-isort....................................................................Passed
-black....................................................................Passed
-Flake8...................................................................Passed
-Verifying PEP257 Compliance..............................................Passed
-mypy.....................................................................Passed
-
-$ git push origin
-```
+See [CONTRIBUTING.md](https://github.com/developmentseed/tilebench/blob/main/CONTRIBUTING.md)
 
 ## License
 

@@ -9,7 +9,6 @@ from starlette.datastructures import MutableHeaders
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
-from wurlitzer import pipes
 
 from tilebench import parse_logs
 
@@ -41,27 +40,24 @@ class VSIStatsMiddleware(BaseHTTPMiddleware):
         logger.addHandler(handler)
 
         gdal_config = {"CPL_DEBUG": "ON", "CPL_CURL_VERBOSE": "TRUE"}
-        with pipes() as (_, curl_stream):
-            with rasterio.Env(**gdal_config, **self.config):
-                response = await call_next(request)
+        with rasterio.Env(**gdal_config, **self.config):
+            response = await call_next(request)
 
         logger.removeHandler(handler)
         handler.close()
 
-        if rio_stream or curl_stream:
+        if rio_stream:
             rio_lines = rio_stream.getvalue().splitlines()
-            curl_lines = curl_stream.read().splitlines()
 
-            results = parse_logs(rio_lines, curl_lines)
+            results = parse_logs(rio_lines)
             head_results = "head;count={count}".format(**results["HEAD"])
-            list_results = "list;count={count}".format(**results["LIST"])
             get_results = "get;count={count};size={bytes}".format(**results["GET"])
             ranges_results = "ranges; values={}".format(
                 "|".join(results["GET"]["ranges"])
             )
             response.headers[
                 "VSI-Stats"
-            ] = f"{list_results}, {head_results}, {get_results}, {ranges_results}"
+            ] = f"{head_results}, {get_results}, {ranges_results}"
 
         return response
 

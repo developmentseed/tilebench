@@ -223,14 +223,13 @@ class TileDebug:
                 (_, _), stats = _read_tile(self.src_path, x, y, z)
 
             head_results = "head;count={count}".format(**stats["HEAD"])
-            list_results = "list;count={count}".format(**stats["LIST"])
             get_results = "get;count={count};size={bytes}".format(**stats["GET"])
             ranges_results = "ranges; values={}".format(
                 "|".join(stats["GET"]["ranges"])
             )
             response.headers[
                 "VSI-Stats"
-            ] = f"{list_results}, {head_results}, {get_results}, {ranges_results}"
+            ] = f"{head_results}, {get_results}, {ranges_results}"
 
             response.headers[
                 "server-timing"

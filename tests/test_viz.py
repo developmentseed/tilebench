@@ -28,7 +28,6 @@ def test_viz():
     stats = response.headers["VSI-Stats"]
     assert "head;count=" in stats
     assert "get;count=" in stats
-    assert "list;count=" in stats
 
     response = client.get("/info.geojson")
     assert response.status_code == 200
