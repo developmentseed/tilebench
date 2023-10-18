@@ -18,7 +18,7 @@ def test_profile():
     assert not result.exception
     assert result.exit_code == 0
     log = json.loads(result.output)
-    assert ["LIST", "HEAD", "GET", "Timing"] == list(log)
+    assert ["HEAD", "GET", "Timing"] == list(log)
     # Make sure we didn't cache any request when `--tile` is not provided
     assert "0-" in log["GET"]["ranges"][0]
 
@@ -38,7 +38,7 @@ def test_profile():
     assert not result.exception
     assert result.exit_code == 0
     log = json.loads(result.output)
-    assert ["LIST", "HEAD", "GET", "Timing"] == list(log)
+    assert ["HEAD", "GET", "Timing"] == list(log)
 
     result = runner.invoke(
         cli, ["profile", COG_PATH, "--tilesize", 512, "--tile", "16-18229-26433"]
@@ -46,7 +46,7 @@ def test_profile():
     assert not result.exception
     assert result.exit_code == 0
     log = json.loads(result.output)
-    assert ["LIST", "HEAD", "GET", "Timing"] == list(log)
+    assert ["HEAD", "GET", "Timing"] == list(log)
 
     result = runner.invoke(
         cli, ["profile", COG_PATH, "--add-kernels", "--add-stdout", "--add-cprofile"]
@@ -55,14 +55,12 @@ def test_profile():
     assert result.exit_code == 0
     log = json.loads(result.output)
     assert [
-        "LIST",
         "HEAD",
         "GET",
         "WarpKernels",
         "Timing",
         "cprofile",
-        "curl",
-        "rasterio",
+        "logs",
     ] == list(log)
 
 

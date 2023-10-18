@@ -37,7 +37,7 @@ def test_output():
     assert data.shape
     assert mask.shape
     assert stats
-    assert stats.get("LIST")
+    assert stats.get("HEAD")
     assert stats.get("GET")
     assert stats.get("Timing")
     assert stats.get("WarpKernels")

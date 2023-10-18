@@ -13,34 +13,26 @@ from typing import Any, Callable, Dict, List, Optional
 
 import rasterio
 from loguru import logger as log
-from wurlitzer import pipes
 
 fmt = "{time} | TILEBENCH | {message}"
 log.remove()
 log.add(sys.stderr, format=fmt)
 
 
-def parse_logs(rio_lines: List[str], curl_lines: List[str]) -> Dict[str, Any]:
+def parse_logs(logs: List[str]) -> Dict[str, Any]:
     """Parse Rasterio and CURL logs."""
-    # LIST
-    list_requests = [line for line in rio_lines if " VSICURL: GetFileList" in line]
-    list_summary = {
-        "count": len(list_requests),
-    }
-
     # HEAD
-    curl_head_requests = [line for line in curl_lines if line.startswith("> HEAD")]
+    head_requests = len([line for line in logs if "CURL_INFO_HEADER_OUT: HEAD" in line])
     head_summary = {
-        "count": len(curl_head_requests),
+        "count": head_requests,
     }
 
-    # CURL GET
-    # CURL logs failed requests
-    curl_get_requests = [line for line in curl_lines if line.startswith("> GET")]
+    # GET
+    all_get_requests = len(
+        [line for line in logs if "CURL_INFO_HEADER_OUT: GET" in line]
+    )
 
-    # Rasterio GET
-    # Rasterio only log successfull requests
-    get_requests = [line for line in rio_lines if ": Downloading" in line]
+    get_requests = [line for line in logs if ": Downloading" in line]
     get_values = [
         map(int, get.split(" Downloading ")[1].split(" ")[0].split("-"))
         for get in get_requests
@@ -49,17 +41,14 @@ def parse_logs(rio_lines: List[str], curl_lines: List[str]) -> Dict[str, Any]:
     data_transfer = sum([j - i + 1 for i, j in get_values])
 
     get_summary = {
-        "count": len(curl_get_requests),
+        "count": all_get_requests,
         "bytes": data_transfer,
         "ranges": get_values_str,
     }
 
-    warp_kernel = [
-        line.split(" ")[-2:] for line in rio_lines if "GDALWarpKernel" in line
-    ]
+    warp_kernel = [line.split(" ")[-2:] for line in logs if "GDALWarpKernel" in line]
 
     return {
-        "LIST": list_summary,
         "HEAD": head_summary,
         "GET": get_summary,
         "WarpKernels": warp_kernel,
@@ -88,25 +77,23 @@ def profile(
             logger.addHandler(handler)
 
             gdal_config = config or {}
-            gdal_config.update({"CPL_DEBUG": "ON", "CPL_CURL_VERBOSE": "TRUE"})
+            gdal_config.update({"CPL_DEBUG": "ON", "CPL_CURL_VERBOSE": "YES"})
 
-            with pipes() as (_, curl_stream):
-                with rasterio.Env(**gdal_config):
-                    with Timer() as t:
-                        prof = cProfile.Profile()
-                        retval = prof.runcall(func, *args, **kwargs)
-                        profile_stream = StringIO()
-                        ps = pstats.Stats(prof, stream=profile_stream)
-                        ps.strip_dirs().sort_stats("time", "ncalls").print_stats()
+            with rasterio.Env(**gdal_config):
+                with Timer() as t:
+                    prof = cProfile.Profile()
+                    retval = prof.runcall(func, *args, **kwargs)
+                    profile_stream = StringIO()
+                    ps = pstats.Stats(prof, stream=profile_stream)
+                    ps.strip_dirs().sort_stats("time", "ncalls").print_stats()
 
             logger.removeHandler(handler)
             handler.close()
 
-            rio_lines = rio_stream.getvalue().splitlines()
-            curl_lines = curl_stream.read().splitlines()
+            logs = rio_stream.getvalue().splitlines()
             profile_lines = [p for p in profile_stream.getvalue().splitlines() if p]
 
-            results = parse_logs(rio_lines, curl_lines)
+            results = parse_logs(logs)
             results["Timing"] = t.elapsed
 
             if cprofile:
@@ -119,8 +106,7 @@ def profile(
                 results.pop("WarpKernels")
 
             if raw:
-                results["curl"] = curl_lines
-                results["rasterio"] = rio_lines
+                results["logs"] = logs
 
             if not quiet:
                 log.info(json.dumps(results))
