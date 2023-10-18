@@ -10,6 +10,7 @@ COPY tilebench tilebench
 COPY pyproject.toml pyproject.toml
 COPY README.md README.md
 COPY CHANGES.md CHANGES.md
+COPY LICENSE LICENSE
 
 RUN pip install . --no-cache-dir --upgrade
 
