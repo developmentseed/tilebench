@@ -1,4 +1,8 @@
 
+## 0.12.0 (2024-01-24)
+
+* allow `tms` options in CLI (`profile`, `random` and `get-zooms`) to select TileMatrixSet
+
 ## 0.11.0 (2023-10-18)
 
 * update requirements

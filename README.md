@@ -40,17 +40,18 @@ Note: In GDAL 3.2, logging capabilities for /vsicurl, /vsis3 and the like was ad
 You can install `tilebench` using pip
 
 ```bash
-$ pip install -U pip
-$ pip install -U tilebench
+$ python -m pip install -U pip
+$ python -m pip install -U tilebench
 ```
 
 or install from source:
 
 ```bash
-$ git clone https://github.com/developmentseed/tilebench.git
-$ cd tilebench
-$ pip install -U pip
-$ pip install -e .
+git clone https://github.com/developmentseed/tilebench.git
+cd tilebench
+
+python -m pip install -U pip
+python -m pip install -e .
 ```
 
 ## API

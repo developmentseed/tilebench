@@ -1,6 +1,7 @@
 """Test CLI."""
 
 import json
+import os
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -8,6 +9,8 @@ from click.testing import CliRunner
 from tilebench.scripts.cli import cli
 
 COG_PATH = "https://noaa-eri-pds.s3.amazonaws.com/2022_Hurricane_Ian/20221002a_RGB/20221002aC0795145w325100n.tif"
+
+TMS = os.path.join(os.path.dirname(__file__), "fixtures", "WGS1984Quad.json")
 
 
 def test_profile():
@@ -73,6 +76,8 @@ def test_get_zoom():
     assert result.exit_code == 0
     log = json.loads(result.output)
     assert ["minzoom", "maxzoom"] == list(log)
+    assert log["minzoom"] == 14
+    assert log["maxzoom"] == 19
 
     result = runner.invoke(
         cli, ["get-zooms", COG_PATH, "--reader", "rio_tiler.io.Reader"]
@@ -118,3 +123,29 @@ def test_viz(launch):
     assert not result.exception
     assert result.exit_code == 0
     assert "14-" in result.output
+
+
+def test_tms():
+    """Should work as expected."""
+    runner = CliRunner()
+
+    result = runner.invoke(cli, ["profile", COG_PATH, "--tms", TMS])
+    assert not result.exception
+    assert result.exit_code == 0
+    log = json.loads(result.output)
+    assert ["HEAD", "GET", "Timing"] == list(log)
+    # Make sure we didn't cache any request when `--tile` is not provided
+    assert "0-" in log["GET"]["ranges"][0]
+
+    result = runner.invoke(cli, ["get-zooms", COG_PATH, "--tms", TMS])
+    assert not result.exception
+    assert result.exit_code == 0
+    log = json.loads(result.output)
+    assert ["minzoom", "maxzoom"] == list(log)
+    assert log["minzoom"] == 13
+    assert log["maxzoom"] == 18
+
+    result = runner.invoke(cli, ["random", COG_PATH, "--tms", TMS])
+    assert not result.exception
+    assert result.exit_code == 0
+    assert "-" in result.output
