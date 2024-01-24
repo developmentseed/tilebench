@@ -16,7 +16,7 @@ from rio_tiler.io import BaseReader, COGReader, MultiBandReader, MultiBaseReader
 from tilebench import profile as profiler
 from tilebench.viz import TileDebug
 
-tms = morecantile.tms.get("WebMercatorQuad")
+default_tms = morecantile.tms.get("WebMercatorQuad")
 
 
 # The CLI command group.
@@ -54,6 +54,11 @@ def cli():
     help="rio-tiler Reader (BaseReader). Default is `rio_tiler.io.COGReader`",
 )
 @click.option(
+    "--tms",
+    help="Path to TileMatrixSet JSON file.",
+    type=click.Path(),
+)
+@click.option(
     "--config",
     "config",
     metavar="NAME=VALUE",
@@ -62,9 +67,23 @@ def cli():
     help="GDAL configuration options.",
 )
 def profile(
-    input, tile, tilesize, zoom, add_kernels, add_stdout, add_cprofile, reader, config
+    input,
+    tile,
+    tilesize,
+    zoom,
+    add_kernels,
+    add_stdout,
+    add_cprofile,
+    reader,
+    tms,
+    config,
 ):
     """Profile COGReader Mercator Tile read."""
+    tilematrixset = default_tms
+    if tms:
+        with open(tms, "r") as f:
+            tilematrixset = morecantile.TileMatrixSet(**json.load(f))
+
     if reader:
         module, classname = reader.rsplit(".", 1)
         reader = getattr(importlib.import_module(module), classname)  # noqa
@@ -75,19 +94,19 @@ def profile(
 
     if not tile:
         with rasterio.Env(CPL_VSIL_CURL_NON_CACHED=parse_path(input).as_vsi()):
-            with Reader(input, tms=tms) as cog:
+            with Reader(input, tms=tilematrixset) as cog:
                 if zoom is None:
                     zoom = randint(cog.minzoom, cog.maxzoom)
 
                 w, s, e, n = cog.geographic_bounds
                 # Truncate BBox to the TMS bounds
-                w = max(tms.bbox.left, w)
-                s = max(tms.bbox.bottom, s)
-                e = min(tms.bbox.right, e)
-                n = min(tms.bbox.top, n)
+                w = max(tilematrixset.bbox.left, w)
+                s = max(tilematrixset.bbox.bottom, s)
+                e = min(tilematrixset.bbox.right, e)
+                n = min(tilematrixset.bbox.top, n)
 
-                ul_tile = tms.tile(w, n, zoom)
-                lr_tile = tms.tile(e, s, zoom)
+                ul_tile = tilematrixset.tile(w, n, zoom)
+                lr_tile = tilematrixset.tile(e, s, zoom)
                 extrema = {
                     "x": {"min": ul_tile.x, "max": lr_tile.x + 1},
                     "y": {"min": ul_tile.y, "max": lr_tile.y + 1},
@@ -109,7 +128,7 @@ def profile(
         config=config,
     )
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-        with Reader(src_path) as cog:
+        with Reader(src_path, tms=tilematrixset) as cog:
             return cog.tile(x, y, z, tilesize=tilesize)
 
     (_, _), stats = _read_tile(input, tile_x, tile_y, tile_z, tilesize)
@@ -124,8 +143,18 @@ def profile(
     type=str,
     help="rio-tiler Reader (BaseReader). Default is `rio_tiler.io.COGReader`",
 )
-def get_zooms(input, reader):
+@click.option(
+    "--tms",
+    help="Path to TileMatrixSet JSON file.",
+    type=click.Path(),
+)
+def get_zooms(input, reader, tms):
     """Get Mercator Zoom levels."""
+    tilematrixset = default_tms
+    if tms:
+        with open(tms, "r") as f:
+            tilematrixset = morecantile.TileMatrixSet(**json.load(f))
+
     if reader:
         module, classname = reader.rsplit(".", 1)
         reader = getattr(importlib.import_module(module), classname)  # noqa
@@ -134,7 +163,7 @@ def get_zooms(input, reader):
 
     Reader = reader or COGReader
 
-    with Reader(input, tms=tms) as cog:
+    with Reader(input, tms=tilematrixset) as cog:
         click.echo(json.dumps({"minzoom": cog.minzoom, "maxzoom": cog.maxzoom}))
 
 
@@ -146,8 +175,18 @@ def get_zooms(input, reader):
     type=str,
     help="rio-tiler Reader (BaseReader). Default is `rio_tiler.io.COGReader`",
 )
-def random(input, zoom, reader):
+@click.option(
+    "--tms",
+    help="Path to TileMatrixSet JSON file.",
+    type=click.Path(),
+)
+def random(input, zoom, reader, tms):
     """Get random tile."""
+    tilematrixset = default_tms
+    if tms:
+        with open(tms, "r") as f:
+            tilematrixset = morecantile.TileMatrixSet(**json.load(f))
+
     if reader:
         module, classname = reader.rsplit(".", 1)
         reader = getattr(importlib.import_module(module), classname)  # noqa
@@ -156,19 +195,19 @@ def random(input, zoom, reader):
 
     Reader = reader or COGReader
 
-    with Reader(input, tms=tms) as cog:
+    with Reader(input, tms=tilematrixset) as cog:
         if zoom is None:
             zoom = randint(cog.minzoom, cog.maxzoom)
         w, s, e, n = cog.geographic_bounds
 
     # Truncate BBox to the TMS bounds
-    w = max(tms.bbox.left, w)
-    s = max(tms.bbox.bottom, s)
-    e = min(tms.bbox.right, e)
-    n = min(tms.bbox.top, n)
+    w = max(tilematrixset.bbox.left, w)
+    s = max(tilematrixset.bbox.bottom, s)
+    e = min(tilematrixset.bbox.right, e)
+    n = min(tilematrixset.bbox.top, n)
 
-    ul_tile = tms.tile(w, n, zoom)
-    lr_tile = tms.tile(e, s, zoom)
+    ul_tile = tilematrixset.tile(w, n, zoom)
+    lr_tile = tilematrixset.tile(e, s, zoom)
     extrema = {
         "x": {"min": ul_tile.x, "max": lr_tile.x + 1},
         "y": {"min": ul_tile.y, "max": lr_tile.y + 1},
