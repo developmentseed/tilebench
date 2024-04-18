@@ -55,9 +55,9 @@ class VSIStatsMiddleware(BaseHTTPMiddleware):
             ranges_results = "ranges; values={}".format(
                 "|".join(results["GET"]["ranges"])
             )
-            response.headers[
-                "VSI-Stats"
-            ] = f"{head_results}, {get_results}, {ranges_results}"
+            response.headers["VSI-Stats"] = (
+                f"{head_results}, {get_results}, {ranges_results}"
+            )
 
         return response
 

@@ -1,3 +1,7 @@
+## 0.12.1 (2024-04-18)
+
+* fix GET range parsing
+* add python 3.12 official support
 
 ## 0.12.0 (2024-01-24)
 

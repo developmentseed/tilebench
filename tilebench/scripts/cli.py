@@ -88,7 +88,7 @@ def profile(
         module, classname = reader.rsplit(".", 1)
         reader = getattr(importlib.import_module(module), classname)  # noqa
         if not issubclass(reader, (BaseReader, MultiBandReader, MultiBaseReader)):
-            warnings.warn(f"Invalid reader type: {type(reader)}")
+            warnings.warn(f"Invalid reader type: {type(reader)}", stacklevel=1)
 
     Reader = reader or COGReader
 
@@ -159,7 +159,7 @@ def get_zooms(input, reader, tms):
         module, classname = reader.rsplit(".", 1)
         reader = getattr(importlib.import_module(module), classname)  # noqa
         if not issubclass(reader, (BaseReader, MultiBandReader, MultiBaseReader)):
-            warnings.warn(f"Invalid reader type: {type(reader)}")
+            warnings.warn(f"Invalid reader type: {type(reader)}", stacklevel=1)
 
     Reader = reader or COGReader
 
@@ -191,7 +191,7 @@ def random(input, zoom, reader, tms):
         module, classname = reader.rsplit(".", 1)
         reader = getattr(importlib.import_module(module), classname)  # noqa
         if not issubclass(reader, (BaseReader, MultiBandReader, MultiBaseReader)):
-            warnings.warn(f"Invalid reader type: {type(reader)}")
+            warnings.warn(f"Invalid reader type: {type(reader)}", stacklevel=1)
 
     Reader = reader or COGReader
 
@@ -253,7 +253,7 @@ def viz(src_path, port, host, server_only, reader, config):
         module, classname = reader.rsplit(".", 1)
         reader = getattr(importlib.import_module(module), classname)  # noqa
         if not issubclass(reader, (BaseReader)):
-            warnings.warn(f"Invalid reader type: {type(reader)}")
+            warnings.warn(f"Invalid reader type: {type(reader)}", stacklevel=1)
 
     Reader = reader or COGReader
 

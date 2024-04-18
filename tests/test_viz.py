@@ -1,6 +1,5 @@
 """Tests for tilebench."""
 
-
 from starlette.testclient import TestClient
 
 from tilebench.viz import TileDebug
