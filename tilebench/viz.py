@@ -224,16 +224,14 @@ class TileDebug:
 
             head_results = "head;count={count}".format(**stats["HEAD"])
             get_results = "get;count={count};size={bytes}".format(**stats["GET"])
-            ranges_results = "ranges; values={}".format(
-                "|".join(stats["GET"]["ranges"])
+            ranges_results = "ranges; values={}".format("|".join(stats["GET"]["ranges"]))
+            response.headers["VSI-Stats"] = (
+                f"{head_results}, {get_results}, {ranges_results}"
             )
-            response.headers[
-                "VSI-Stats"
-            ] = f"{head_results}, {get_results}, {ranges_results}"
 
-            response.headers[
-                "server-timing"
-            ] = f"dataread; dur={round(t.elapsed * 1000, 2)}"
+            response.headers["server-timing"] = (
+                f"dataread; dur={round(t.elapsed * 1000, 2)}"
+            )
             return "OK"
 
         @self.router.get(
