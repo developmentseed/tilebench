@@ -116,7 +116,7 @@ max-complexity = 14
 
 
 [tool.bumpversion]
-current_version = "0.12.1"
+current_version = "0.13.0"
 search = "{current_version}"
 replace = "{new_version}"
 regex = false
