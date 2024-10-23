@@ -124,6 +124,7 @@ class TileDebug:
 
     src_path: str = attr.ib()
     reader: Type[BaseReader] = attr.ib(default=Reader)
+    reader_params: Dict = attr.ib(factory=dict)
 
     app: FastAPI = attr.ib(default=attr.Factory(FastAPI))
 
@@ -172,7 +173,7 @@ class TileDebug:
             ],
         ):
             """Handle /image requests."""
-            with self.reader(self.src_path) as src_dst:
+            with self.reader(self.src_path, **self.reader_params) as src_dst:
                 img = src_dst.tile(x, y, z)
 
             return PNGResponse(
@@ -216,7 +217,7 @@ class TileDebug:
                 config=self.config,
             )
             def _read_tile(src_path: str, x: int, y: int, z: int):
-                with self.reader(src_path) as src_dst:
+                with self.reader(src_path, **self.reader_params) as src_dst:
                     return src_dst.tile(x, y, z)
 
             with Timer() as t:
@@ -241,42 +242,67 @@ class TileDebug:
         )
         def info():
             """Return a geojson."""
-            with Reader(self.src_path) as src_dst:
-                width, height = src_dst.dataset.width, src_dst.dataset.height
+            with self.reader(self.src_path, **self.reader_params) as src_dst:
+                bounds = src_dst.get_geographic_bounds(
+                    src_dst.tms.rasterio_geographic_crs
+                )
+
+                width, height = src_dst.width, src_dst.height
+                if not all([width, height]):
+                    return bbox_to_feature(
+                        bounds,
+                        properties={
+                            "bounds": bounds,
+                            "crs": src_dst.crs.to_epsg(),
+                            "ifd": [],
+                        },
+                    )
 
                 info = {
                     "width": width,
                     "height": height,
+                    "bounds": bounds,
+                    "crs": src_dst.crs.to_epsg(),
                 }
-                info["bounds"] = src_dst.geographic_bounds
 
-                info["crs"] = src_dst.dataset.crs.to_epsg()
-
-                ovr = src_dst.dataset.overviews(1)
-                info["overviews"] = len(ovr)
                 dst_affine, _, _ = calculate_default_transform(
-                    src_dst.dataset.crs,
+                    src_dst.crs,
                     tms.crs,
                     width,
                     height,
-                    *src_dst.dataset.bounds,
+                    *src_dst.bounds,
                 )
+
+                # Raw resolution Zoom and IFD info
                 resolution = max(abs(dst_affine[0]), abs(dst_affine[4]))
                 zoom = tms.zoom_for_res(resolution)
                 info["maxzoom"] = zoom
+
+                try:
+                    blocksize = src_dst.dataset.block_shapes[0]
+                except Exception:
+                    blocksize = src_dst.width
 
                 ifd = [
                     {
                         "Level": 0,
                         "Width": width,
                         "Height": height,
-                        "Blocksize": src_dst.dataset.block_shapes[0],
+                        "Blocksize": blocksize,
                         "Decimation": 0,
                         "MercatorZoom": zoom,
                         "MercatorResolution": resolution,
                     }
                 ]
 
+            try:
+                ovr = src_dst.dataset.overviews(1)
+            except Exception:
+                ovr = []
+
+            info["overviews"] = len(ovr)
+
+            # Overviews Zooms and IFD info
             for ix, decim in enumerate(ovr):
                 with rasterio.open(self.src_path, OVERVIEW_LEVEL=ix) as ovr_dst:
                     dst_affine, _, _ = calculate_default_transform(
@@ -313,26 +339,35 @@ class TileDebug:
         )
         def grid(ovr_level: Annotated[int, Query(description="Overview Level")]):
             """return geojson."""
-            options = {"OVERVIEW_LEVEL": ovr_level - 1} if ovr_level else {}
-            with rasterio.open(self.src_path, **options) as src_dst:
-                feats = []
-                blockxsize, blockysize = src_dst.block_shapes[0]
-                winds = (
-                    windows.Window(col_off=col_off, row_off=row_off, width=w, height=h)
-                    for row_off, h in dims(src_dst.height, blockysize)
-                    for col_off, w in dims(src_dst.width, blockxsize)
-                )
-                for window in winds:
-                    fc = bbox_to_feature(windows.bounds(window, src_dst.transform))
-                    for feat in fc.get("features", []):
-                        geom = transform_geom(src_dst.crs, WGS84_CRS, feat["geometry"])
-                        feats.append(
-                            {
-                                "type": "Feature",
-                                "geometry": geom,
-                                "properties": {"window": str(window)},
-                            }
+            # Will only work with Rasterio compatible dataset
+            try:
+                options = {"OVERVIEW_LEVEL": ovr_level - 1} if ovr_level else {}
+                with rasterio.open(self.src_path, **options) as src_dst:
+                    feats = []
+                    blockxsize, blockysize = src_dst.block_shapes[0]
+                    winds = (
+                        windows.Window(
+                            col_off=col_off, row_off=row_off, width=w, height=h
                         )
+                        for row_off, h in dims(src_dst.height, blockysize)
+                        for col_off, w in dims(src_dst.width, blockxsize)
+                    )
+                    for window in winds:
+                        fc = bbox_to_feature(windows.bounds(window, src_dst.transform))
+                        for feat in fc.get("features", []):
+                            geom = transform_geom(
+                                src_dst.crs, WGS84_CRS, feat["geometry"]
+                            )
+                            feats.append(
+                                {
+                                    "type": "Feature",
+                                    "geometry": geom,
+                                    "properties": {"window": str(window)},
+                                }
+                            )
+
+            except Exception:
+                feats = []
 
             return {"type": "FeatureCollection", "features": feats}
 

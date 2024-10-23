@@ -1,3 +1,8 @@
+## 0.13.0 (2024-10-23)
+
+* update rio-tiler dependency to `>=7.0,<8.0`
+* add `reader-params` options in CLI
+
 ## 0.12.1 (2024-04-18)
 
 * fix GET range parsing
