@@ -1,3 +1,8 @@
+## 0.14.0 (2025-01-06)
+
+* remove `python 3.8` support
+* add `python 3.13` support
+
 ## 0.13.0 (2024-10-23)
 
 * update rio-tiler dependency to `>=7.0,<8.0`
