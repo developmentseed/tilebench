@@ -56,17 +56,13 @@ def parse_rasterio_io_logs(logs: List[str]) -> Dict[str, Any]:
 def parse_vsifile_io_logs(logs: List[str]) -> Dict[str, Any]:
     """Parse VSIFILE IO logs."""
     # HEAD
-    head_requests = len(
-        [line for line in logs if "VSIFILE_INFO_HEADER_OUT: HEAD" in line]
-    )
+    head_requests = len([line for line in logs if "VSIFILE_INFO: HEAD" in line])
     head_summary = {
         "count": head_requests,
     }
 
     # GET
-    all_get_requests = len(
-        [line for line in logs if "VSIFILE_INFO_HEADER_OUT: GET" in line]
-    )
+    all_get_requests = len([line for line in logs if "VSIFILE_INFO: GET" in line])
 
     get_requests = [line for line in logs if "VSIFILE: Downloading: " in line]
 
