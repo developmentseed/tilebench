@@ -103,6 +103,13 @@ def cli():
     callback=options_to_dict,
     help="Reader Options.",
 )
+@click.option(
+    "--io",
+    "io_backend",
+    type=click.Choice(["vsifile", "rasterio"], case_sensitive=True),
+    help="IO Backend Options.",
+    default="rasterio",
+)
 def profile(
     input,
     tile,
@@ -115,6 +122,7 @@ def profile(
     tms,
     config,
     reader_params,
+    io_backend,
 ):
     """Profile Reader Tile read."""
     tilematrixset = default_tms
@@ -166,6 +174,7 @@ def profile(
         raw=add_stdout,
         cprofile=add_cprofile,
         config=config,
+        io=io_backend,
     )
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
         with DstReader(src_path, tms=tilematrixset, **reader_params) as cog:
