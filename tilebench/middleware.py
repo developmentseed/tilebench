@@ -10,7 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from tilebench import parse_rasterio_io_logs
+from tilebench import parse_rasterio_io_logs, parse_vsifile_io_logs
 
 
 class VSIStatsMiddleware(BaseHTTPMiddleware):
@@ -27,6 +27,10 @@ class VSIStatsMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.config: Dict = config or {}
         self.exclude_paths: List = exclude_paths or []
+
+        if io not in ["rasterio", "vsifile"]:
+            raise ValueError(f"Unsupported {io} IO backend")
+
         self.io_backend = io
 
     async def dispatch(self, request: Request, call_next):
@@ -49,9 +53,14 @@ class VSIStatsMiddleware(BaseHTTPMiddleware):
         handler.close()
 
         if io_stream:
-            io_lines = io_stream.getvalue().splitlines()
+            logs = io_stream.getvalue().splitlines()
 
-            results = parse_rasterio_io_logs(io_lines)
+            results = {}
+            if self.io_backend == "vsifile":
+                results.update(parse_vsifile_io_logs(logs))
+            else:
+                results.update(parse_rasterio_io_logs(logs))
+
             head_results = "head;count={count}".format(**results["HEAD"])
             get_results = "get;count={count};size={bytes}".format(**results["GET"])
             ranges_results = "ranges; values={}".format(
