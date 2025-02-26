@@ -323,7 +323,14 @@ def random(input, zoom, reader, tms, reader_params):
     callback=options_to_dict,
     help="Reader Options.",
 )
-def viz(src_path, port, host, server_only, reader, config, reader_params):
+@click.option(
+    "--io",
+    "io_backend",
+    type=click.Choice(["vsifile", "rasterio"], case_sensitive=True),
+    help="IO Backend Options.",
+    default="rasterio",
+)
+def viz(src_path, port, host, server_only, reader, config, reader_params, io_backend):
     """WEB UI to visualize VSI statistics for a web mercator tile requests."""
     if reader:
         module, classname = reader.rsplit(".", 1)
@@ -342,6 +349,7 @@ def viz(src_path, port, host, server_only, reader, config, reader_params):
         port=port,
         host=host,
         config=config,
+        io_backend=io_backend,
     )
     if not server_only:
         click.echo(f"Viewer started at {application.template_url}", err=True)

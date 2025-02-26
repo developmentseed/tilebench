@@ -1,3 +1,7 @@
+## 0.15.0 (2025-02-26)
+
+* add support for `VSIFile` backend (https://github.com/developmentseed/tilebench/pull/27)
+
 ## 0.14.0 (2025-01-06)
 
 * remove `python 3.8` support
