@@ -19,7 +19,7 @@ log.remove()
 log.add(sys.stderr, format=fmt)
 
 
-def parse_logs(logs: List[str]) -> Dict[str, Any]:
+def parse_rasterio_io_logs(logs: List[str]) -> Dict[str, Any]:
     """Parse Rasterio and CURL logs."""
     # HEAD
     head_requests = len([line for line in logs if "CURL_INFO_HEADER_OUT: HEAD" in line])
@@ -53,6 +53,41 @@ def parse_logs(logs: List[str]) -> Dict[str, Any]:
     }
 
 
+def parse_vsifile_io_logs(logs: List[str]) -> Dict[str, Any]:
+    """Parse VSIFILE IO logs."""
+    # HEAD
+    head_requests = len([line for line in logs if "VSIFILE_INFO: HEAD" in line])
+    head_summary = {
+        "count": head_requests,
+    }
+
+    # GET
+    all_get_requests = len([line for line in logs if "VSIFILE_INFO: GET" in line])
+
+    get_requests = [line for line in logs if "VSIFILE: Downloading: " in line]
+
+    get_values_str = []
+    for get in get_requests:
+        get_values_str.extend(get.split("VSIFILE: Downloading: ")[1].split(", "))
+
+    get_values = [list(map(int, r.split("-"))) for r in get_values_str]
+    data_transfer = sum([j - i + 1 for i, j in get_values])
+
+    get_summary = {
+        "count": all_get_requests,
+        "bytes": data_transfer,
+        "ranges": get_values_str,
+    }
+
+    warp_kernel = [line.split(" ")[-2:] for line in logs if "GDALWarpKernel" in line]
+
+    return {
+        "HEAD": head_summary,
+        "GET": get_summary,
+        "WarpKernels": warp_kernel,
+    }
+
+
 def profile(
     kernels: bool = False,
     add_to_return: bool = False,
@@ -60,18 +95,21 @@ def profile(
     raw: bool = False,
     cprofile: bool = False,
     config: Optional[Dict] = None,
+    io="rasterio",
 ):
     """Profiling."""
+    if io not in ["rasterio", "vsifile"]:
+        raise ValueError(f"Unsupported {io} IO backend")
 
     def wrapper(func: Callable):
         """Wrap a function."""
 
         def wrapped_f(*args, **kwargs):
             """Wrapped function."""
-            rio_stream = StringIO()
-            logger = logging.getLogger("rasterio")
+            io_stream = StringIO()
+            logger = logging.getLogger(io)
             logger.setLevel(logging.DEBUG)
-            handler = logging.StreamHandler(rio_stream)
+            handler = logging.StreamHandler(io_stream)
             logger.addHandler(handler)
 
             gdal_config = config or {}
@@ -88,10 +126,15 @@ def profile(
             logger.removeHandler(handler)
             handler.close()
 
-            logs = rio_stream.getvalue().splitlines()
+            logs = io_stream.getvalue().splitlines()
             profile_lines = [p for p in profile_stream.getvalue().splitlines() if p]
 
-            results = parse_logs(logs)
+            results = {}
+            if io == "vsifile":
+                results.update(parse_vsifile_io_logs(logs))
+            else:
+                results.update(parse_rasterio_io_logs(logs))
+
             results["Timing"] = t.elapsed
 
             if cprofile:

@@ -35,6 +35,7 @@ test = [
     "pytest-cov",
     "pytest-asyncio",
     "requests",
+    "vsifile",
 ]
 dev = [
     "pre-commit",

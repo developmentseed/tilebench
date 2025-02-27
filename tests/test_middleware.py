@@ -1,8 +1,10 @@
 """Tests for tilebench."""
 
+import rasterio
 from fastapi import FastAPI
 from rio_tiler.io import Reader
 from starlette.testclient import TestClient
+from vsifile.rasterio import opener
 
 from tilebench.middleware import NoCacheMiddleware, VSIStatsMiddleware
 
@@ -33,26 +35,77 @@ def test_middleware():
     def skip():
         return "I've been skipped"
 
-    client = TestClient(app)
+    with TestClient(app) as client:
+        response = client.get("/info")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json"
+        assert response.headers["Cache-Control"] == "no-cache"
+        assert response.headers["VSI-Stats"]
+        stats = response.headers["VSI-Stats"]
+        assert "head;count=" in stats
+        assert "get;count=" in stats
 
-    response = client.get("/info")
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "application/json"
-    assert response.headers["Cache-Control"] == "no-cache"
-    assert response.headers["VSI-Stats"]
-    stats = response.headers["VSI-Stats"]
-    assert "head;count=" in stats
-    assert "get;count=" in stats
+        response = client.get("/tile")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json"
+        assert response.headers["VSI-Stats"]
+        stats = response.headers["VSI-Stats"]
+        assert "head;count=" in stats
+        assert "get;count=" in stats
 
-    response = client.get("/tile")
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "application/json"
-    assert response.headers["VSI-Stats"]
-    stats = response.headers["VSI-Stats"]
-    assert "head;count=" in stats
-    assert "get;count=" in stats
+        response = client.get("/skip")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json"
+        assert "VSI-Stats" not in response.headers
 
-    response = client.get("/skip")
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "application/json"
-    assert "VSI-Stats" not in response.headers
+
+def test_middleware_vsifile():
+    """Simple test."""
+    app = FastAPI()
+    app.add_middleware(NoCacheMiddleware)
+    app.add_middleware(
+        VSIStatsMiddleware, config={}, exclude_paths=["/skip"], io="vsifile"
+    )
+
+    @app.get("/info")
+    def head():
+        """Get info."""
+        with rasterio.open(COG_PATH, opener=opener) as src:
+            with Reader(None, dataset=src) as cog:
+                cog.info()
+                return "I got info"
+
+    @app.get("/tile")
+    def tile():
+        """Read tile."""
+        with rasterio.open(COG_PATH, opener=opener) as src:
+            with Reader(None, dataset=src) as cog:
+                cog.tile(36460, 52866, 17)
+                return "I got tile"
+
+    @app.get("/skip")
+    def skip():
+        return "I've been skipped"
+
+    with TestClient(app) as client:
+        response = client.get("/info")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json"
+        assert response.headers["Cache-Control"] == "no-cache"
+        assert response.headers["VSI-Stats"]
+        stats = response.headers["VSI-Stats"]
+        assert "head;count=" in stats
+        assert "get;count=" in stats
+
+        response = client.get("/tile")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json"
+        assert response.headers["VSI-Stats"]
+        stats = response.headers["VSI-Stats"]
+        assert "head;count=" in stats
+        assert "get;count=" in stats
+
+        response = client.get("/skip")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json"
+        assert "VSI-Stats" not in response.headers

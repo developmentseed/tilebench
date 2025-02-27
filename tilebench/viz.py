@@ -131,6 +131,7 @@ class TileDebug:
     port: int = attr.ib(default=8080)
     host: str = attr.ib(default="127.0.0.1")
     config: Dict = attr.ib(default=dict)
+    io_backend: str = attr.ib(default="rasterio")
 
     router: Optional[APIRouter] = attr.ib(init=False)
 
@@ -215,6 +216,7 @@ class TileDebug:
                 add_to_return=True,
                 raw=False,
                 config=self.config,
+                io=self.io_backend,
             )
             def _read_tile(src_path: str, x: int, y: int, z: int):
                 with self.reader(src_path, **self.reader_params) as src_dst:
@@ -295,10 +297,10 @@ class TileDebug:
                     }
                 ]
 
-            try:
-                ovr = src_dst.dataset.overviews(1)
-            except Exception:
-                ovr = []
+                try:
+                    ovr = src_dst.dataset.overviews(1)
+                except Exception:
+                    ovr = []
 
             info["overviews"] = len(ovr)
 
