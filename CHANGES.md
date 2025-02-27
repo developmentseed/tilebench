@@ -1,4 +1,4 @@
-## 0.15.0 (2025-02-26)
+## 0.15.0 (2025-02-27)
 
 * add support for `VSIFile` backend (https://github.com/developmentseed/tilebench/pull/27)
 
