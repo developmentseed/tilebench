@@ -24,6 +24,7 @@ from tilebench import profile as profiler
 def test_profiler(src_path, head, get):
     """Test profiler."""
     config = {
+        "AWS_NO_SIGN_REQUEST": True,
         "AWS_DEFAULT_REGION": "us-west-2",
         "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
     }
