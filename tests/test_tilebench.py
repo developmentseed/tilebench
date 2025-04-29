@@ -1,4 +1,9 @@
-"""Test profiler with S3 and HTTPS files."""
+"""Test profiler with S3 and HTTPS files.
+
+NOTE: while not in GDAL>=3.10 the number of GET/Head requests might not be right
+see: https://github.com/vincentsarago/vsifile/issues/13#issuecomment-2683310594
+
+"""
 
 import pytest
 from rio_tiler.io import Reader
@@ -21,6 +26,7 @@ from tilebench import profile as profiler
         ),
     ],
 )
+@pytest.mark.xfail
 def test_profiler(src_path, head, get):
     """Test profiler."""
     config = {
