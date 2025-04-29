@@ -1,3 +1,7 @@
+## 0.16.0 (2025-04-30)
+
+* new Range request parsing logic to make sure it works with S3 and HTTPS files
+
 ## 0.15.0 (2025-02-27)
 
 * add support for `VSIFile` backend (https://github.com/developmentseed/tilebench/pull/27)
