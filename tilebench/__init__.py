@@ -30,9 +30,18 @@ def parse_rasterio_io_logs(logs: List[str]) -> Dict[str, Any]:
     # GET
     all_get_requests = len([line for line in logs if "CURL_INFO_HEADER_OUT: GET" in line])
 
-    get_requests = [line for line in logs if ": Downloading" in line]
+    get_requests = [
+        line for line in logs if "CURL_INFO_HEADER_IN: Content-Range: bytes" in line
+    ]
     get_values = [
-        list(map(int, get.split(" Downloading ")[1].split(" ")[0].split("-")))
+        list(
+            map(
+                int,
+                get.split("CURL_INFO_HEADER_IN: Content-Range: bytes ")[1]
+                .split("/")[0]
+                .split("-"),
+            )
+        )
         for get in get_requests
     ]
     get_values_str = [f"{start}-{end}" for (start, end) in get_values]
