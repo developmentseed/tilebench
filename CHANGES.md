@@ -1,3 +1,8 @@
+## Unreleased
+
+* switch to official python base image over `bitnami`
+* switch to preferred `ENV` setting in Dockerfile
+
 ## 0.16.0 (2025-04-30)
 
 * new Range request parsing logic to make sure it works with S3 and HTTPS files
