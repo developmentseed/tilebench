@@ -1,7 +1,11 @@
 ## Unreleased
 
+## 0.17.0 (2025-11-17)
+
 * switch to official python base image over `bitnami`
 * switch to preferred `ENV` setting in Dockerfile
+* switch to UV for development
+* set minimum python version to `>=3.11`
 
 ## 0.16.0 (2025-04-30)
 
