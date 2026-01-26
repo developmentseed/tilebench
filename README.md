@@ -215,7 +215,6 @@ Ready to use docker image can be found on Github registry.
 ```bash
 docker run \
   --volume "$PWD":/data \
-  --platform linux/amd64 \
   --rm -it -p 8080:8080 ghcr.io/developmentseed/tilebench:latest \
   tilebench viz --host 0.0.0.0 https://noaa-eri-pds.s3.us-east-1.amazonaws.com/2020_Nashville_Tornado/20200307a_RGB/20200307aC0865700w360900n.tif
 ```

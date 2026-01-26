@@ -1,5 +1,7 @@
 ## Unreleased
 
+* add: python 3.14 support
+
 ## 0.17.0 (2025-11-17)
 
 * switch to official python base image over `bitnami`
