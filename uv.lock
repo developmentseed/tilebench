@@ -1474,7 +1474,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "9.0.2"
+version = "9.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -1483,9 +1483,9 @@ dependencies = [
     { name = "pluggy" },
     { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/db/7ef3487e0fb0049ddb5ce41d3a49c235bf9ad299b6a25d5780a89f19230f/pytest-9.0.2.tar.gz", hash = "sha256:75186651a92bd89611d1d9fc20f0b4345fd827c41ccd5c299a868a05d70edf11", size = 1568901, upload-time = "2025-12-06T21:30:51.014Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/0d/549bd94f1a0a402dc8cf64563a117c0f3765662e2e668477624baeec44d5/pytest-9.0.3.tar.gz", hash = "sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c", size = 1572165, upload-time = "2026-04-07T17:16:18.027Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl", hash = "sha256:711ffd45bf766d5264d487b917733b453d917afd2b0ad65223959f59089f875b", size = 374801, upload-time = "2025-12-06T21:30:49.154Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/24/a372aaf5c9b7208e7112038812994107bc65a84cd00e0354a88c2c77a617/pytest-9.0.3-py3-none-any.whl", hash = "sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9", size = 375249, upload-time = "2026-04-07T17:16:16.13Z" },
 ]
 
 [[package]]
@@ -1750,7 +1750,7 @@ wheels = [
 
 [[package]]
 name = "rio-tiler"
-version = "9.0.4"
+version = "9.0.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -1764,11 +1764,11 @@ dependencies = [
     { name = "pystac" },
     { name = "rasterio", version = "1.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "rasterio", version = "1.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.15'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ca/d7/6a1e16f0bd5608c24a93be830d760437f6a0b4673e13a45e4bbe1b9dfd47/rio_tiler-9.0.4.tar.gz", hash = "sha256:5769e533f07c6d8cafafe84614b4fc9086cfefb7265eeda7849f0f927d299c2a", size = 190915, upload-time = "2026-03-24T17:12:20.39Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d4/57/586669b6df34e5d164bdcaa246fd2afbb6d7a5cb512d0f68243b0bd4401b/rio_tiler-9.0.6.tar.gz", hash = "sha256:20aa64760a2dd8ee40fb3b925d62fc0a87b9e01f352456fa96d4fd5e41b19c78", size = 190893, upload-time = "2026-04-08T07:35:38.994Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/03/7812700200411866c02ce1e4e06ff3c7c7ee78eebfa838a76cba9b026e73/rio_tiler-9.0.4-py3-none-any.whl", hash = "sha256:4877844d5fd339496d94cd130737376403b09aa33563bf21aa048925f7b49dd1", size = 287499, upload-time = "2026-03-24T17:12:18.336Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/59/fab64b94bdba99b738047653d34469cac634965b1cba02578413946f5fb8/rio_tiler-9.0.6-py3-none-any.whl", hash = "sha256:6c86d6e98692d0e851bd29cc47e237aedd82450b019192f791d5a77a7b5043be", size = 287490, upload-time = "2026-04-08T07:35:37.07Z" },
 ]
 
 [[package]]
