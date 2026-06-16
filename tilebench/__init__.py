@@ -122,7 +122,9 @@ def profile(
             logger.addHandler(handler)
 
             gdal_config = config or {}
-            gdal_config.update({"CPL_DEBUG": "ON", "CPL_CURL_VERBOSE": "YES"})
+            gdal_config.update(
+                {"CPL_DEBUG": "ON", "CPL_CURL_VERBOSE": "YES", "GDAL_NUM_THREADS": "1"}
+            )
 
             with rasterio.Env(**gdal_config):
                 with Timer() as t:
