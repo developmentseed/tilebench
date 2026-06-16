@@ -8,8 +8,9 @@ import logging
 import pstats
 import sys
 import time
+from collections.abc import Callable
 from io import StringIO
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import rasterio
 from loguru import logger as log
@@ -19,7 +20,7 @@ log.remove()
 log.add(sys.stderr, format=fmt)
 
 
-def parse_rasterio_io_logs(logs: List[str]) -> Dict[str, Any]:
+def parse_rasterio_io_logs(logs: list[str]) -> dict[str, Any]:
     """Parse Rasterio and CURL logs."""
     # HEAD
     head_requests = len([line for line in logs if "CURL_INFO_HEADER_OUT: HEAD" in line])
@@ -62,7 +63,7 @@ def parse_rasterio_io_logs(logs: List[str]) -> Dict[str, Any]:
     }
 
 
-def parse_vsifile_io_logs(logs: List[str]) -> Dict[str, Any]:
+def parse_vsifile_io_logs(logs: list[str]) -> dict[str, Any]:
     """Parse VSIFILE IO logs."""
     # HEAD
     head_requests = len([line for line in logs if "VSIFILE_INFO: HEAD" in line])
@@ -103,7 +104,7 @@ def profile(
     quiet: bool = False,
     raw: bool = False,
     cprofile: bool = False,
-    config: Optional[Dict] = None,
+    config: dict | None = None,
     io="rasterio",
 ):
     """Profiling."""

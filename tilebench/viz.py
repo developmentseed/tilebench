@@ -2,7 +2,6 @@
 
 import math
 import pathlib
-from typing import Dict, Optional, Tuple, Type
 
 import attr
 import morecantile
@@ -36,9 +35,9 @@ WGS84_CRS = CRS.from_epsg(4326)
 
 
 def bbox_to_feature(
-    bbox: Tuple[float, float, float, float],
-    properties: Optional[Dict] = None,
-) -> Dict:
+    bbox: tuple[float, float, float, float],
+    properties: dict | None = None,
+) -> dict:
     """Create a GeoJSON feature polygon from a bounding box."""
     # Dateline crossing dataset
     if bbox[0] > bbox[2]:
@@ -123,17 +122,17 @@ class TileDebug:
     """Creates a very minimal server using fastAPI + Uvicorn."""
 
     src_path: str = attr.ib()
-    reader: Type[BaseReader] = attr.ib(default=Reader)
-    reader_params: Dict = attr.ib(factory=dict)
+    reader: type[BaseReader] = attr.ib(default=Reader)
+    reader_params: dict = attr.ib(factory=dict)
 
     app: FastAPI = attr.ib(default=attr.Factory(FastAPI))
 
     port: int = attr.ib(default=8080)
     host: str = attr.ib(default="127.0.0.1")
-    config: Dict = attr.ib(default=dict)
+    config: dict = attr.ib(default=dict)
     io_backend: str = attr.ib(default="rasterio")
 
-    router: Optional[APIRouter] = attr.ib(init=False)
+    router: APIRouter | None = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         """Update App."""

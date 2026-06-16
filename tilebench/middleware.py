@@ -2,7 +2,6 @@
 
 import logging
 from io import StringIO
-from typing import Dict, List, Optional
 
 import rasterio
 from starlette.datastructures import MutableHeaders
@@ -19,14 +18,14 @@ class VSIStatsMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        config: Optional[Dict] = None,
-        exclude_paths: Optional[List] = None,
+        config: dict | None = None,
+        exclude_paths: list | None = None,
         io: str = "rasterio",
     ) -> None:
         """Init Middleware."""
         super().__init__(app)
-        self.config: Dict = config or {}
-        self.exclude_paths: List = exclude_paths or []
+        self.config: dict = config or {}
+        self.exclude_paths: list = exclude_paths or []
 
         if io not in ["rasterio", "vsifile"]:
             raise ValueError(f"Unsupported {io} IO backend")
