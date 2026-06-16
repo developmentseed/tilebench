@@ -382,8 +382,8 @@ class TileDebug:
             """Handle /index.html."""
             return templates.TemplateResponse(
                 name="index.html",
+                request=request,
                 context={
-                    "request": request,
                     "geojson_endpoint": str(request.url_for("info")),
                     "grid_endpoint": str(request.url_for("grid")),
                     "tile_endpoint": str(

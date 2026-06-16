@@ -1,5 +1,10 @@
 ## Unreleased
 
+## 0.19.0 (2026-06-16)
+
+* fix: HTML template
+* fix: set `GDAL_NUM_THREADS=1` by default to avoid multhreading block decompression
+
 ## 0.18.0 (2026-04-02)
 
 * add: python 3.14 support
