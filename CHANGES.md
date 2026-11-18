@@ -1,5 +1,11 @@
 ## Unreleased
 
+## 0.20.0 (2026-11-18)
+
+* remove `--tilesize` option in CLI
+* add `--tile-params` option in CLI, used to pass options to the `tile()` method (e.g `--tile-params tilesize=256` -> `Reader.tile(x, y, z, tilesize=256)`)
+* remove `-p` short option for `--reader-params` in CLI
+
 ## 0.19.0 (2026-06-16)
 
 * fix: HTML template
