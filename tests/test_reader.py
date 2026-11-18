@@ -14,7 +14,7 @@ def test_simple():
 
     @profiler()
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-        with Reader(src_path) as cog:
+        with Reader(input=src_path, options={}) as cog:
             return cog.tile(x, y, z, tilesize=tilesize)
 
     data, mask = _read_tile(COG_PATH, 36460, 52866, 17)
@@ -32,7 +32,7 @@ def test_output():
         config={"GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR"},
     )
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-        with Reader(src_path) as cog:
+        with Reader(input=src_path, options={}) as cog:
             return cog.tile(x, y, z, tilesize=tilesize)
 
     (data, mask), stats = _read_tile(COG_PATH, 36460, 52866, 17)
@@ -57,7 +57,7 @@ def test_vsifile():
     )
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
         with rasterio.open(src_path, opener=opener) as src:
-            with Reader(None, dataset=src) as cog:
+            with Reader(input=None, dataset=src, options={}) as cog:
                 return cog.tile(x, y, z, tilesize=tilesize)
 
     (data, mask), stats = _read_tile(COG_PATH, 36460, 52866, 17)
