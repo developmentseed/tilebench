@@ -20,14 +20,14 @@ def test_middleware():
     @app.get("/info")
     def head():
         """Get info."""
-        with Reader(COG_PATH) as cog:
+        with Reader(input=COG_PATH, options={}) as cog:
             cog.info()
             return "I got info"
 
     @app.get("/tile")
     def tile():
         """Read tile."""
-        with Reader(COG_PATH) as cog:
+        with Reader(input=COG_PATH, options={}) as cog:
             cog.tile(36460, 52866, 17)
             return "I got tile"
 
@@ -71,7 +71,7 @@ def test_middleware_vsifile():
     def head():
         """Get info."""
         with rasterio.open(COG_PATH, opener=opener) as src:
-            with Reader(None, dataset=src) as cog:
+            with Reader(input=None, dataset=src, options={}) as cog:
                 cog.info()
                 return "I got info"
 
@@ -79,7 +79,7 @@ def test_middleware_vsifile():
     def tile():
         """Read tile."""
         with rasterio.open(COG_PATH, opener=opener) as src:
-            with Reader(None, dataset=src) as cog:
+            with Reader(input=None, dataset=src, options={}) as cog:
                 cog.tile(36460, 52866, 17)
                 return "I got tile"
 

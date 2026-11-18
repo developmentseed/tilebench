@@ -14,7 +14,7 @@ from rasterio import windows
 from rasterio._path import _parse_path as parse_path
 from rasterio.crs import CRS
 from rasterio.warp import calculate_default_transform, transform_geom
-from rio_tiler.io import BaseReader, Reader
+from rio_tiler.io import BaseReader, MultiBandReader, MultiBaseReader, Reader
 from rio_tiler.utils import render
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
@@ -122,8 +122,9 @@ class TileDebug:
     """Creates a very minimal server using fastAPI + Uvicorn."""
 
     src_path: str = attr.ib()
-    reader: type[BaseReader] = attr.ib(default=Reader)
+    reader: type[BaseReader | MultiBandReader | MultiBaseReader] = attr.ib(default=Reader)
     reader_params: dict = attr.ib(factory=dict)
+    tile_params: dict = attr.ib(factory=dict)
 
     app: FastAPI = attr.ib(default=attr.Factory(FastAPI))
 
@@ -132,7 +133,7 @@ class TileDebug:
     config: dict = attr.ib(default=dict)
     io_backend: str = attr.ib(default="rasterio")
 
-    router: APIRouter | None = attr.ib(init=False)
+    router: APIRouter = attr.ib(init=False, factory=lambda: APIRouter())
 
     def __attrs_post_init__(self):
         """Update App."""
@@ -141,7 +142,6 @@ class TileDebug:
             {"CPL_VSIL_CURL_NON_CACHED": parse_path(self.src_path).as_vsi()}
         )
 
-        self.router = APIRouter()
         self.register_routes()
         self.app.include_router(self.router)
         self.app.mount("/static", StaticFiles(directory=static_dir), name="static")
@@ -173,8 +173,8 @@ class TileDebug:
             ],
         ):
             """Handle /image requests."""
-            with self.reader(self.src_path, **self.reader_params) as src_dst:
-                img = src_dst.tile(x, y, z)
+            with self.reader(input=self.src_path, **self.reader_params) as src_dst:
+                img = src_dst.tile(x, y, z, **self.tile_params)
 
             return PNGResponse(
                 render(
@@ -218,8 +218,8 @@ class TileDebug:
                 io=self.io_backend,
             )
             def _read_tile(src_path: str, x: int, y: int, z: int):
-                with self.reader(src_path, **self.reader_params) as src_dst:
-                    return src_dst.tile(x, y, z)
+                with self.reader(input=src_path, **self.reader_params) as src_dst:
+                    return src_dst.tile(x, y, z, **self.tile_params)
 
             with Timer() as t:
                 (_, _), stats = _read_tile(self.src_path, x, y, z)
@@ -243,7 +243,7 @@ class TileDebug:
         )
         def info():
             """Return a geojson."""
-            with self.reader(self.src_path, **self.reader_params) as src_dst:
+            with self.reader(input=self.src_path, **self.reader_params) as src_dst:
                 bounds = src_dst.get_geographic_bounds(
                     src_dst.tms.rasterio_geographic_crs
                 )

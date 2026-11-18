@@ -30,12 +30,12 @@ def test_profile():
         [
             "profile",
             COG_PATH,
-            "--tilesize",
-            512,
             "--zoom",
-            11,
+            "11",
             "--reader",
             "rio_tiler.io.Reader",
+            "--tile-params",
+            "tilesize=512",
         ],
     )
     assert not result.exception
@@ -44,7 +44,15 @@ def test_profile():
     assert ["HEAD", "GET", "Timing"] == list(log)
 
     result = runner.invoke(
-        cli, ["profile", COG_PATH, "--tilesize", 512, "--tile", "16-18229-26433"]
+        cli,
+        [
+            "profile",
+            COG_PATH,
+            "--tile",
+            "16-18229-26433",
+            "--tile-params",
+            "tilesize=512",
+        ],
     )
     assert not result.exception
     assert result.exit_code == 0
@@ -52,7 +60,14 @@ def test_profile():
     assert ["HEAD", "GET", "Timing"] == list(log)
 
     result = runner.invoke(
-        cli, ["profile", COG_PATH, "--add-kernels", "--add-stdout", "--add-cprofile"]
+        cli,
+        [
+            "profile",
+            COG_PATH,
+            "--add-kernels",
+            "--add-stdout",
+            "--add-cprofile",
+        ],
     )
     assert not result.exception
     assert result.exit_code == 0
@@ -80,7 +95,13 @@ def test_get_zoom():
     assert log["maxzoom"] == 19
 
     result = runner.invoke(
-        cli, ["get-zooms", COG_PATH, "--reader", "rio_tiler.io.Reader"]
+        cli,
+        [
+            "get-zooms",
+            COG_PATH,
+            "--reader",
+            "rio_tiler.io.Reader",
+        ],
     )
     assert not result.exception
     assert result.exit_code == 0
@@ -98,7 +119,15 @@ def test_random():
     assert "-" in result.output
 
     result = runner.invoke(
-        cli, ["random", COG_PATH, "--zoom", 14, "--reader", "rio_tiler.io.Reader"]
+        cli,
+        [
+            "random",
+            COG_PATH,
+            "--zoom",
+            "14",
+            "--reader",
+            "rio_tiler.io.Reader",
+        ],
     )
     assert not result.exception
     assert result.exit_code == 0
@@ -118,7 +147,15 @@ def test_viz(launch):
     assert "-" in result.output
 
     result = runner.invoke(
-        cli, ["random", COG_PATH, "--zoom", 14, "--reader", "rio_tiler.io.Reader"]
+        cli,
+        [
+            "random",
+            COG_PATH,
+            "--zoom",
+            "14",
+            "--reader",
+            "rio_tiler.io.Reader",
+        ],
     )
     assert not result.exception
     assert result.exit_code == 0

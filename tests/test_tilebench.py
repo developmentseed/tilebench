@@ -35,7 +35,7 @@ def test_profiler(src_path, head, get):
         config=config,
     )
     def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-        with Reader(src_path) as cog:
+        with Reader(input=src_path, options={}) as cog:
             return cog.tile(x, y, z, tilesize=tilesize)
 
     (_, _), stats = _read_tile(src_path, 121, 185, 9)

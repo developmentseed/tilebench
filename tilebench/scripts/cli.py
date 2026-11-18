@@ -56,7 +56,6 @@ def cli():
 @cli.command()
 @options.file_in_arg
 @click.option("--tile", type=str)
-@click.option("--tilesize", type=int, default=256)
 @click.option("--zoom", type=int)
 @click.option(
     "--add-kernels",
@@ -96,12 +95,19 @@ def cli():
 )
 @click.option(
     "--reader-params",
-    "-p",
     "reader_params",
     metavar="NAME=VALUE",
     multiple=True,
     callback=options_to_dict,
     help="Reader Options.",
+)
+@click.option(
+    "--tile-params",
+    "tile_params",
+    metavar="NAME=VALUE",
+    multiple=True,
+    callback=options_to_dict,
+    help="Tile Method Options.",
 )
 @click.option(
     "--io",
@@ -113,7 +119,6 @@ def cli():
 def profile(
     input,
     tile,
-    tilesize,
     zoom,
     add_kernels,
     add_stdout,
@@ -122,6 +127,7 @@ def profile(
     tms,
     config,
     reader_params,
+    tile_params,
     io_backend,
 ):
     """Profile Reader Tile read."""
@@ -136,15 +142,17 @@ def profile(
         if not issubclass(reader, (BaseReader, MultiBandReader, MultiBaseReader)):
             warnings.warn(f"Invalid reader type: {type(reader)}", stacklevel=1)
 
-    DstReader = reader or Reader
+    DatasetReader = reader or Reader
 
     if not tile:
         with rasterio.Env(CPL_VSIL_CURL_NON_CACHED=parse_path(input).as_vsi()):
-            with Reader(input, tms=tilematrixset, **reader_params) as cog:
+            with Reader(input, tms=tilematrixset, **reader_params) as dataset:
                 if zoom is None:
-                    zoom = randint(cog.minzoom, cog.maxzoom)
+                    minzoom = getattr(dataset, "minzoom", tilematrixset.minzoom)
+                    maxzoom = getattr(dataset, "maxzoom", tilematrixset.maxzoom)
+                    zoom = randint(minzoom, maxzoom)
 
-                w, s, e, n = cog.get_geographic_bounds(
+                w, s, e, n = dataset.get_geographic_bounds(
                     tilematrixset.rasterio_geographic_crs
                 )
                 # Truncate BBox to the TMS bounds
@@ -167,6 +175,8 @@ def profile(
     else:
         tile_z, tile_x, tile_y = list(map(int, tile.split("-")))
 
+    tilesize = int(tile_params.pop("tilesize", 256))
+
     @profiler(
         kernels=add_kernels,
         quiet=True,
@@ -176,11 +186,15 @@ def profile(
         config=config,
         io=io_backend,
     )
-    def _read_tile(src_path: str, x: int, y: int, z: int, tilesize: int = 256):
-        with DstReader(src_path, tms=tilematrixset, **reader_params) as cog:
-            return cog.tile(x, y, z, tilesize=tilesize)
+    def _read_tile(src_path: str, x: int, y: int, z: int):
+        with DatasetReader(
+            src_path,
+            tms=tilematrixset,
+            **reader_params,
+        ) as dataset:
+            return dataset.tile(x, y, z, tilesize=tilesize, **tile_params)
 
-    (_, _), stats = _read_tile(input, tile_x, tile_y, tile_z, tilesize)
+    (_, _), stats = _read_tile(input, tile_x, tile_y, tile_z)
 
     click.echo(json.dumps(stats))
 
@@ -199,7 +213,6 @@ def profile(
 )
 @click.option(
     "--reader-params",
-    "-p",
     "reader_params",
     metavar="NAME=VALUE",
     multiple=True,
@@ -219,10 +232,12 @@ def get_zooms(input, reader, tms, reader_params):
         if not issubclass(reader, (BaseReader, MultiBandReader, MultiBaseReader)):
             warnings.warn(f"Invalid reader type: {type(reader)}", stacklevel=1)
 
-    DstReader = reader or Reader
+    DatasetReader = reader or Reader
 
-    with DstReader(input, tms=tilematrixset, **reader_params) as cog:
-        click.echo(json.dumps({"minzoom": cog.minzoom, "maxzoom": cog.maxzoom}))
+    with DatasetReader(input, tms=tilematrixset, **reader_params) as dataset:
+        minzoom = getattr(dataset, "minzoom", tilematrixset.minzoom)
+        maxzoom = getattr(dataset, "maxzoom", tilematrixset.maxzoom)
+        click.echo(json.dumps({"minzoom": minzoom, "maxzoom": maxzoom}))
 
 
 @cli.command()
@@ -240,7 +255,6 @@ def get_zooms(input, reader, tms, reader_params):
 )
 @click.option(
     "--reader-params",
-    "-p",
     "reader_params",
     metavar="NAME=VALUE",
     multiple=True,
@@ -260,12 +274,14 @@ def random(input, zoom, reader, tms, reader_params):
         if not issubclass(reader, (BaseReader, MultiBandReader, MultiBaseReader)):
             warnings.warn(f"Invalid reader type: {type(reader)}", stacklevel=1)
 
-    DstReader = reader or Reader
+    DatasetReader = reader or Reader
 
-    with DstReader(input, tms=tilematrixset, **reader_params) as cog:
+    with DatasetReader(input, tms=tilematrixset, **reader_params) as dataset:
         if zoom is None:
-            zoom = randint(cog.minzoom, cog.maxzoom)
-        w, s, e, n = cog.get_geographic_bounds(tilematrixset.rasterio_geographic_crs)
+            minzoom = getattr(dataset, "minzoom", tilematrixset.minzoom)
+            maxzoom = getattr(dataset, "maxzoom", tilematrixset.maxzoom)
+            zoom = randint(minzoom, maxzoom)
+        w, s, e, n = dataset.get_geographic_bounds(tilematrixset.rasterio_geographic_crs)
 
     # Truncate BBox to the TMS bounds
     w = max(tilematrixset.bbox.left, w)
@@ -316,12 +332,19 @@ def random(input, zoom, reader, tms, reader_params):
 )
 @click.option(
     "--reader-params",
-    "-p",
     "reader_params",
     metavar="NAME=VALUE",
     multiple=True,
     callback=options_to_dict,
     help="Reader Options.",
+)
+@click.option(
+    "--tile-params",
+    "tile_params",
+    metavar="NAME=VALUE",
+    multiple=True,
+    callback=options_to_dict,
+    help="Tile Method Options.",
 )
 @click.option(
     "--io",
@@ -330,7 +353,17 @@ def random(input, zoom, reader, tms, reader_params):
     help="IO Backend Options.",
     default="rasterio",
 )
-def viz(src_path, port, host, server_only, reader, config, reader_params, io_backend):
+def viz(
+    src_path,
+    port,
+    host,
+    server_only,
+    reader,
+    config,
+    reader_params,
+    tile_params,
+    io_backend,
+):
     """WEB UI to visualize VSI statistics for a web mercator tile requests."""
     if reader:
         module, classname = reader.rsplit(".", 1)
@@ -338,14 +371,15 @@ def viz(src_path, port, host, server_only, reader, config, reader_params, io_bac
         if not issubclass(reader, (BaseReader, MultiBandReader, MultiBaseReader)):
             warnings.warn(f"Invalid reader type: {type(reader)}", stacklevel=1)
 
-    DstReader = reader or Reader
+    DatasetReader = reader or Reader
 
     config = config or {}
 
     application = TileDebug(
         src_path=src_path,
-        reader=DstReader,
+        reader=DatasetReader,
         reader_params=reader_params,
+        tile_params=tile_params,
         port=port,
         host=host,
         config=config,
